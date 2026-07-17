@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* PALETA CLARA INDUSTRIAL - RIGOR E CLAREZA */
+    --background: 210 20% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --primary: 231 48% 48%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 33 100% 63%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 231 48% 48%;
+    --radius: 1.25rem;
+  }
+}
+
+/* RIGOR TÉCNICO: PROIBIÇÃO DE ITÁLICO */
+* {
+  font-style: normal !important;
+}
+
+.circuit-bg {
+  background-color: #1a0b2e;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.2) 0%, transparent 20%),
+    radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.2) 0%, transparent 20%),
+    linear-gradient(45deg, rgba(30, 27, 75, 0.3) 25%, transparent 25%, transparent 75%, rgba(30, 27, 75, 0.3) 75%, rgba(30, 27, 75, 0.3)),
+    linear-gradient(45deg, rgba(30, 27, 75, 0.3) 25%, transparent 25%, transparent 75%, rgba(30, 27, 75, 0.3) 75%, rgba(30, 27, 75, 0.3));
+  background-size: 60px 60px;
+  background-position: 0 0, 0 0, 0 0, 30px 30px;
+}
+
+/* RELATÓRIO TÉCNICO: ESTILO TERMINAL DE DADOS - PESO 800 PARA MÁXIMA AUTORIDADE */
+.relatorio-tecnico {
+  text-align: justify !important;
+  font-weight: 800 !important;
+  line-height: 1.6;
+  letter-spacing: 0.025em;
+}
+
+.error-text-technical {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  font-size: 1rem;
+  width: 100%;
+  display: block;
+}
+
+body {
+  color: #1e293b;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+.text-fluid-title {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+}
+
+.text-fluid-subtitle {
+  font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+}

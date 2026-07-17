@@ -1,0 +1,57 @@
+
+{
+  "entities": {
+    "QueryLog": {
+      "title": "Registro de Consulta",
+      "description": "Log de consultas de CNPJ realizadas no portal.",
+      "type": "object",
+      "properties": {
+        "cnpj": { "type": "string", "description": "CNPJ consultado" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "riskLevel": { "type": "string", "enum": ["ALTO", "MEDIO", "BAIXO", "CONDICIONADO", "NÃO ENCONTRADO"] }
+      },
+      "required": ["cnpj", "timestamp", "riskLevel"]
+    },
+    "CachedCompany": {
+      "title": "Cache de Empresa",
+      "description": "Dados da empresa armazenados para evitar excesso de requisições à API Federal.",
+      "type": "object",
+      "properties": {
+        "razao_social": { "type": "string" },
+        "nome_fantasia": { "type": "string" },
+        "cnpj": { "type": "string" },
+        "cnaes": { "type": "array", "items": { "type": "object" } },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["cnpj", "razao_social", "updatedAt"]
+    },
+    "Material": {
+      "title": "Material para Download",
+      "description": "Arquivo ou link para download de manuais ou orientações.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Título do material" },
+        "url": { "type": "string", "description": "URL do arquivo ou link" },
+        "type": { "type": "string", "enum": ["pdf", "drive", "canva"], "description": "Tipo de material" }
+      },
+      "required": ["title", "url", "type"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/queries/{queryId}": {
+      "schema": { "$ref": "#/entities/QueryLog" },
+      "description": "Coleção de registros de consultas para fins de auditoria sanitária."
+    },
+    "/companies/{cnpj}": {
+      "schema": { "$ref": "#/entities/CachedCompany" },
+      "description": "Cache persistente de dados de empresas para eliminar erros de Rate Limit."
+    },
+    "/materials/{materialId}": {
+      "schema": { "$ref": "#/entities/Material" },
+      "description": "Coleção de materiais para download."
+    }
+  }
+}

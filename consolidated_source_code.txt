@@ -1,0 +1,2215 @@
+--- src/components/FirebaseErrorListener.tsx ---
+
+'use client';
+
+import { useEffect } from 'react';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { useToast } from '@/hooks/use-toast';
+
+export const FirebaseErrorListener = () => {
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const handleError = (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "ERRO DE BACKEND",
+        description: error.message || "FALHA NA OPERAÇÃO DE DADOS.",
+      });
+    };
+
+    errorEmitter.on('permission-error', handleError);
+    return () => {
+      errorEmitter.off('permission-error', handleError);
+    };
+  }, [toast]);
+
+  return null;
+};
+-e 
+
+--- src/components/theme-provider.tsx ---
+"use client"
+
+import * as React from "react"
+import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { type ThemeProviderProps } from "next-themes/dist/types"
+
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+}
+-e 
+
+--- src/components/HeaderBanner.tsx ---
+'use client';
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { X, Rocket } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import rocketMascot from '@/assets/images/rocket_mascot_1783940800845.jpg';
+
+export function HeaderBanner() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Show banner on component mount
+    setIsVisible(true);
+
+    // Auto-hide after 60 seconds
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+    }, 60000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleClose = () => {
+    setIsVisible(false);
+  };
+
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          id="header-agiliza-banner"
+          initial={{ opacity: 0, y: -50, scale: 0.9 }}
+          animate={{ 
+            opacity: 1, 
+            y: 0, 
+            scale: 1,
+          }}
+          exit={{ opacity: 0, y: -50, scale: 0.9 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed top-6 left-4 right-4 md:right-auto md:left-8 md:w-[450px] z-[100]"
+        >
+          {/* Cloud-like container */}
+          <motion.div
+            animate={{
+              y: [0, -6, 0],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="relative w-full bg-white p-7 shadow-[0_30px_70px_rgba(0,149,255,0.15)] rounded-[3rem]"
+          >
+            <div className="flex items-start gap-4 relative z-10">
+              <div className="w-16 h-16 flex items-center justify-center shrink-0">
+                <motion.div
+                  animate={{ 
+                    y: [0, -8, 0],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                  className="relative w-full h-full flex items-center justify-center"
+                >
+                  <Image 
+                    src={rocketMascot} 
+                    alt="Rocket Mascot" 
+                    width={48} 
+                    height={48} 
+                    className="w-12 h-12 object-contain"
+                    referrerPolicy="no-referrer"
+                  />
+                </motion.div>
+              </div>
+
+              <div className="flex-1 space-y-1">
+                <h4 className="text-sm font-bold text-slate-900">Novidades no Agiliza</h4>
+                <p className="text-xs md:text-[13px] text-slate-600 leading-relaxed">
+                  Conheça a consulta de risco sanitário por CNAE e baixe nosso material exclusivo gratuitamente.
+                </p>
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                id="close-banner-button"
+                className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 shrink-0 h-8 w-8 rounded-full"
+                onClick={handleClose}
+                aria-label="Fechar banner"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+-e 
+
+--- src/components/risk-components.tsx ---
+'use client';
+
+import { CircleCheck, TriangleAlert, CircleX, Info, ShieldCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export const RiskIcon = ({ level, className }: { level: string; className?: string }) => {
+  switch (level) {
+    case 'BAIXO': return <CircleCheck className={cn("text-emerald-400", className)} />;
+    case 'MEDIO': return <TriangleAlert className={cn("text-amber-400", className)} />;
+    case 'ALTO': return <CircleX className={cn("text-rose-400", className)} />;
+    case 'CONDICIONADO': return <Info className={cn("text-sky-400", className)} />;
+    default: return <ShieldCheck className={cn("text-slate-500", className)} />;
+  }
+};
+
+export const RiskBadge = ({ level }: { level: string }) => {
+  const styles: any = {
+    BAIXO: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+    MEDIO: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+    ALTO: "bg-rose-500/10 text-rose-400 border-rose-500/30",
+    CONDICIONADO: "bg-sky-500/10 text-sky-400 border-sky-500/30",
+    "NÃO ENCONTRADO": "bg-slate-800 text-slate-400 border-slate-700"
+  };
+  return (
+    <div className={cn("px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest flex items-center gap-3 backdrop-blur-md", styles[level] || styles["NÃO ENCONTRADO"])}>
+      <RiskIcon level={level} className="h-4 w-4" />
+      {level}
+    </div>
+  );
+};
+-e 
+
+--- src/components/SimpleCnaeQuery.tsx ---
+'use client';
+
+import React, { useState } from 'react';
+import { Search, AlertTriangle, AlertCircle, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
+import { resolveCnaeRisk } from '@/lib/risk-analysis';
+import { RiskBadge } from './risk-components';
+import { Card } from './ui/card';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Label } from './ui/label';
+
+const PORTE_THEMES: Record<string, { text: string; bg: string; border: string; icon: any; label: string; }> = {
+  'Porte III': { 
+    text: 'text-red-700', 
+    bg: 'bg-red-50', 
+    border: 'border-red-200',
+    icon: AlertTriangle,
+    label: 'Alta Complexidade'
+  },
+  'Porte II e III': { 
+    text: 'text-amber-700', 
+    bg: 'bg-amber-50', 
+    border: 'border-amber-200',
+    icon: AlertCircle,
+    label: 'Média Complexidade'
+  },
+  'Porte I, II e III': { 
+    text: 'text-emerald-700', 
+    bg: 'bg-emerald-50', 
+    border: 'border-emerald-200',
+    icon: CheckCircle2,
+    label: ''
+  }
+};
+
+export function SimpleCnaeQuery() {
+  const [query, setQuery] = useState('');
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<any>(null);
+
+  const handleSearch = (currentAnswers?: Record<string, string>) => {
+    if (!query) return;
+    const activeAnswers = currentAnswers !== undefined ? currentAnswers : {};
+    if (currentAnswers === undefined) {
+      setAnswers({});
+    }
+    const res = resolveCnaeRisk(query, activeAnswers);
+    setResult(res);
+  };
+
+  const reset = () => {
+    setQuery('');
+    setResult(null);
+    setAnswers({});
+  };
+
+  return (
+    <Card className="p-8 md:p-12 bg-[#fffdf0] border border-amber-100 rounded-[3rem] shadow-2xl overflow-hidden relative mt-12">
+      <div className="space-y-8">
+        <div className="text-center space-y-2">
+          <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight flex items-center justify-center gap-3">
+            <Search className="w-6 h-6 text-blue-600" />
+            Consulta Prévia por CNAE
+          </h3>
+          <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">
+            Descubra o risco e o porte antes de abrir sua empresa
+          </p>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+          <div className="w-full md:w-64">
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="0000-0/00"
+              value={query}
+              onChange={(e) => setQuery(e.target.value.replace(/\D/g, ''))}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              className="h-16 text-xl md:text-2xl text-center border-2 border-slate-200 bg-white rounded-2xl font-mono font-black text-blue-700 focus:bg-white focus:border-blue-500 transition-all placeholder:text-slate-200 shadow-inner"
+            />
+          </div>
+          <Button
+            onClick={handleSearch}
+            className="h-16 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg transition-all active:scale-95 shadow-lg shadow-blue-500/20 w-full md:w-auto"
+          >
+            Consultar
+          </Button>
+        </div>
+
+        {result && result.risk !== 'NÃO ENCONTRADO' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Grau de Risco</span>
+                  <HelpCircle className="w-4 h-4 text-slate-300" />
+                </div>
+                <div className="text-center py-2">
+                  <p className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-800">
+                    {result.risk}
+                  </p>
+                </div>
+                <p className="text-[10px] text-slate-500 font-bold text-center leading-relaxed italic">
+                  {result.risk === 'BAIXO' && "Dispensa licenciamento sanitário"}
+                  {result.risk === 'MEDIO' && "Licenciamento simplificado (Nível II)."}
+                  {result.risk === 'ALTO' && "Exige inspeção e projeto prévio (Nível III)."}
+                </p>
+              </div>
+
+              <div className={`p-6 rounded-3xl border shadow-sm space-y-4 ${PORTE_THEMES[result.porte]?.bg || 'bg-slate-50'} ${PORTE_THEMES[result.porte]?.border || 'border-slate-100'}`}>
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${PORTE_THEMES[result.porte]?.text || 'text-slate-400'}`}>
+                    Porte de Fiscalização
+                  </span>
+                  {(() => {
+                    const ThemeIcon = PORTE_THEMES[result.porte]?.icon || CheckCircle2;
+                    return <ThemeIcon className={`w-4 h-4 ${PORTE_THEMES[result.porte]?.text || 'text-slate-300'}`} />;
+                  })()}
+                </div>
+                <div className="text-center py-2">
+                  <p className={`text-2xl md:text-3xl font-black uppercase tracking-tighter ${PORTE_THEMES[result.porte]?.text || 'text-slate-800'}`}>
+                    {result.porte}
+                  </p>
+                  {PORTE_THEMES[result.porte]?.label && (
+                    <p className={`text-[10px] font-black uppercase tracking-widest mt-1 opacity-80 ${PORTE_THEMES[result.porte]?.text || 'text-slate-600'}`}>
+                      {PORTE_THEMES[result.porte]?.label}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {result.risk === 'CONDICIONADO' && result.path && (
+              <div className="p-8 bg-blue-50 border border-blue-100 rounded-3xl space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-white rounded-xl shadow-sm">
+                    <AlertCircle className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Questionário de Autodeclaração</p>
+                    <p className="text-sm md:text-base font-black text-blue-950 uppercase leading-tight">{result.question}</p>
+                  </div>
+                </div>
+                <RadioGroup 
+                  value={answers[result.path] || ""} 
+                  onValueChange={(v) => {
+                    const nextAnswers = { ...answers, [result.path!]: v };
+                    setAnswers(nextAnswers);
+                    handleSearch(nextAnswers);
+                  }} 
+                  className="flex gap-12"
+                >
+                  <div className="flex items-center space-x-3 bg-white px-6 py-3 rounded-2xl border border-blue-200 shadow-sm cursor-pointer hover:border-blue-400 transition-all">
+                    <RadioGroupItem value="Sim" id="pre-sim" className="h-5 w-5 border-blue-600" />
+                    <Label htmlFor="pre-sim" className="font-black text-blue-900 text-sm cursor-pointer">SIM</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 bg-white px-6 py-3 rounded-2xl border border-blue-200 shadow-sm cursor-pointer hover:border-blue-400 transition-all">
+                    <RadioGroupItem value="Não" id="pre-nao" className="h-5 w-5 border-blue-600" />
+                    <Label htmlFor="pre-nao" className="font-black text-blue-900 text-sm cursor-pointer">NÃO</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+
+            <div className="flex justify-center">
+              <Button 
+                onClick={reset} 
+                className="bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-2xl px-12 py-6 h-auto text-xs font-black uppercase tracking-widest transition-all"
+              >
+                Nova Consulta
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {result && result.risk === 'NÃO ENCONTRADO' && (
+          <div className="p-8 bg-rose-50 border border-rose-100 rounded-3xl text-center space-y-4 animate-in shake-in duration-300">
+            <XCircle className="w-12 h-12 text-rose-500 mx-auto" />
+            <div className="space-y-1">
+              <p className="text-rose-900 font-black text-lg uppercase">CNAE não localizado</p>
+              <p className="text-rose-600 font-bold text-xs uppercase tracking-tight">Verifique o código ou consulte a vigilância local.</p>
+            </div>
+            <Button onClick={reset} variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-100 uppercase text-[10px] font-black">Tentar Novamente</Button>
+          </div>
+        )}
+
+        <div className="pt-10 border-t border-slate-100 space-y-6">
+          <div className="flex items-center gap-4">
+             <div className="h-px bg-slate-200 w-full"></div>
+             <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] whitespace-nowrap">Nota Explicativa</span>
+             <div className="h-px bg-slate-200 w-full"></div>
+          </div>
+          
+          <div className="bg-blue-50/50 p-8 md:p-12 rounded-[2.5rem] border border-blue-100 shadow-sm">
+            <p className="text-sm md:text-base font-medium text-slate-700 leading-relaxed text-center max-w-2xl mx-auto">
+              O porte de cada município (I, II ou III) pode variar de acordo com a sua capacidade técnica e administrativa. 
+              Consulte a classificação do seu município no documento oficial abaixo:
+            </p>
+            <div className="flex justify-center mt-8">
+              <a 
+                href="https://conselho.saude.pr.gov.br/sites/ces/arquivos_restritos/files/migrados/File/Demonstracao_porte_municipios_pr.pdf" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 bg-blue-600 px-8 py-4 rounded-full text-xs font-black text-white uppercase tracking-widest hover:bg-blue-700 hover:scale-105 transition-all shadow-xl shadow-blue-500/20"
+              >
+                <HelpCircle className="w-4 h-4" />
+                Consultar Porte dos Municípios
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+-e 
+
+--- src/components/MaterialsList.tsx ---
+'use client';
+
+import React from 'react';
+import { collection, query } from 'firebase/firestore';
+import { useFirestore, useCollection } from '@/firebase';
+import { FileText } from 'lucide-react';
+
+export function MaterialsList() {
+  const db = useFirestore();
+  const materialsQuery = db ? query(collection(db, 'materials')) : null;
+  const { data, loading } = useCollection(materialsQuery);
+
+  if (loading) return <div className="text-center p-4">Carregando materiais...</div>;
+
+  const allMaterials = [
+    ...(data || []),
+    {
+      title: "Cartilha de Orientações - Salões de Beleza",
+      url: "https://drive.google.com/file/d/1jWHDCk6wkDPyLfxC3XMJJCjfCGP57TrH/view?usp=sharing",
+      type: "documento drive"
+    },
+    {
+      title: "Guia Prático Para Manipuladores de Alimentos",
+      url: "https://canva.link/n0m6eopzmngwz3w",
+      type: "canva"
+    },
+    {
+      title: "Dia Nacional do Combate ao Fumo",
+      url: "https://canva.link/q0rqg2zeapndhcx",
+      type: "canva"
+    },
+    {
+      title: "AEDES AEGYPTI - DENGUE",
+      url: "https://canva.link/dsk2g3f25n8crd4",
+      type: "canva"
+    },
+    {
+      title: "VIGIAGUA",
+      url: "https://canva.link/gnommm3tc4vr1kx",
+      type: "canva"
+    },
+    {
+      title: "DENGUE MUTIRAO",
+      url: "https://canva.link/gnommm3tc4vr1kx",
+      type: "canva"
+    }
+  ];
+
+  return (
+    <div className="grid gap-4 mt-6">
+      {allMaterials.map((material: any, index: number) => (
+        <a
+          key={index}
+          href={material.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center gap-4 border border-slate-100"
+        >
+          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-slate-800 font-bold">{material.title}</span>
+            <span className="text-xs text-slate-500 uppercase tracking-wider">{material.type}</span>
+          </div>
+        </a>
+      ))}
+    </div>
+  );
+}
+-e 
+
+--- src/components/FloatingMaterialsIcon.tsx ---
+'use client';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from '@/components/ui/sheet';
+import { Rocket } from 'lucide-react';
+import Image from 'next/image';
+import rocketMascot from '@/assets/images/rocket_mascot_1783940800845.jpg';
+import { MaterialsList } from './MaterialsList';
+import { SimpleCnaeQuery } from './SimpleCnaeQuery';
+
+export function FloatingMaterialsIcon() {
+  return (
+    <>
+      <Sheet>
+        <SheetTrigger className="fixed bottom-6 right-6 z-50 bg-white border-2 border-indigo-600 p-2 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center overflow-hidden w-16 h-16">
+          <Image 
+            src={rocketMascot} 
+            alt="Rocket" 
+            width={48} 
+            height={48} 
+            className="w-full h-full object-contain"
+            referrerPolicy="no-referrer"
+          />
+        </SheetTrigger>
+        <SheetContent className="w-[300px] sm:w-[400px]">
+          <SheetHeader>
+              <SheetTitle>Materiais para Download</SheetTitle>
+              <SheetDescription>Baixe nossos materiais educativos clicando nos links abaixo.</SheetDescription>
+          </SheetHeader>
+          <div className="overflow-y-auto h-full mt-6 pb-10">
+              <MaterialsList />
+              <SimpleCnaeQuery />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+-e 
+
+--- src/ai/index.ts ---
+
+import './genkit.js';
+import './flows/explain-cnae-flow.js';
+-e 
+
+--- src/ai/genkit.ts ---
+
+import { genkit, z } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
+
+export const ai = genkit({
+  plugins: [
+    googleAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY }),
+  ],
+  model: googleAI.model('gemini-2.5-flash'),
+});
+
+export { z };
+-e 
+
+--- src/ai/flows/explain-cnae-flow.ts ---
+
+'use server';
+
+/**
+ * @fileOverview Fluxo de IA para explicar riscos sanitários.
+ */
+
+import { ai, z } from '@/ai/genkit';
+
+const ExplainCnaeInputSchema = z.object({
+  cnaeCode: z.string().describe('O código CNAE da empresa.'),
+  description: z.string().describe('A descrição da atividade econômica.'),
+  riskLevel: z.string().describe('O nível de risco identificado (BAIXO, MEDIO, ALTO).'),
+});
+
+export type ExplainCnaeInput = z.infer<typeof ExplainCnaeInputSchema>;
+
+const ExplainCnaeOutputSchema = z.object({
+  explanation: z.string().describe('Uma explicação simples e amigável sobre por que essa atividade tem esse risco.'),
+  tips: z.array(z.string()).describe('Dicas de conformidade sanitária para o empreendedor.'),
+});
+
+export type ExplainCnaeOutput = z.infer<typeof ExplainCnaeOutputSchema>;
+
+const prompt = ai.definePrompt({
+  name: 'explainCnaePrompt',
+  input: { schema: ExplainCnaeInputSchema },
+  output: { schema: ExplainCnaeOutputSchema },
+  prompt: `Você é um consultor técnico da Vigilância Sanitária do Paraná.
+  O usuário consultou o CNAE {{{cnaeCode}}} ({{{description}}}), que foi classificado como {{{riskLevel}}}.
+  
+  Explique de forma pedagógica e profissional:
+  1. Por que essa atividade é classificada dessa forma segundo a Resolução SESA 1034/2020.
+  2. Quais os principais cuidados que o empreendedor deve ter.
+  3. Dê 3 dicas práticas de higiene ou organização documental.
+  
+  Mantenha um tom encorajador e técnico. Use CAIXA ALTA para termos importantes.`,
+});
+
+export const explainCnaeFlow = ai.defineFlow(
+  {
+    name: 'explainCnaeFlow',
+    inputSchema: ExplainCnaeInputSchema,
+    outputSchema: ExplainCnaeOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
+    return output!;
+  }
+);
+
+export async function explainCnae(input: ExplainCnaeInput): Promise<ExplainCnaeOutput> {
+  return explainCnaeFlow(input);
+}
+-e 
+
+--- src/app/page.tsx ---
+'use client';
+
+/**
+ * @fileOverview AgilizaVISA – PARANÁ – VERSÃO CONSOLIDADA PARA PUBLICAÇÃO DEFINITIVA.
+ * RESOLUÇÃO SESA Nº 1034/2020 | DECRETO ESTADUAL Nº 10.590/2025.
+ */
+
+import { useState, useTransition, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Search, RotateCcw, Loader2, ArrowRight, Megaphone, MessageCircle, Mail, FileText, Image as ImageIcon, AlertTriangle, AlertCircle, CheckCircle2 } from 'lucide-react';
+import Image from 'next/image';
+import newLogo from '../assets/images/logo_large_transparent_1783604980775.jpg';
+import { fetchCnpjData } from './actions';
+import { analyzeRisk, resolveCnaeRisk } from '@/lib/risk-analysis';
+import { RiskBadge, RiskIcon } from '@/components/risk-components';
+import { Card } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { MaterialsList } from '@/components/MaterialsList';
+import { SimpleCnaeQuery } from '@/components/SimpleCnaeQuery';
+import { FloatingMaterialsIcon } from '@/components/FloatingMaterialsIcon';
+import { useFirestore } from '@/firebase'; 
+import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import type { CompanyData, RiskAnalysisResult } from '@/lib/types';
+
+const schema = z.object({
+  cnpj: z.string().min(1, "DIGITE O CNPJ").refine(val => val.replace(/\D/g, '').length === 14, "O CNPJ DEVE TER 14 NÚMEROS")
+});
+
+function TechBackground() {
+  return (
+    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none bg-slate-50">
+      {/* Light Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-blue-50/30 to-white/90"></div>
+      
+      {/* Circuit Pattern - Radial Nodes */}
+      <div className="absolute inset-0"
+           style={{
+             backgroundImage: `
+               radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 25%),
+               radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 25%),
+               linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+               linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px)
+             `,
+             backgroundSize: '100px 100px, 100px 100px, 40px 40px, 40px 40px'
+           }}></div>
+
+      {/* Subtle light beams */}
+      <div className="absolute top-0 left-[20%] w-[1px] h-full bg-gradient-to-b from-transparent via-blue-200/50 to-transparent"></div>
+      <div className="absolute top-0 right-[20%] w-[1px] h-full bg-gradient-to-b from-transparent via-blue-200/50 to-transparent"></div>
+    </div>
+  );
+}
+
+function LogoGraphic({ className }: { className?: string }) {
+  return (
+    <div className={`relative ${className}`}>
+      <div className="absolute inset-0 bg-[#3F51B5] blur-xl opacity-20 rounded-full"></div>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 w-full h-full drop-shadow-md">
+        <path d="M50 5L56 12L64 10L68 18L77 18L79 26L87 29L86 37L92 42L88 50L92 58L86 63L87 71L79 74L77 82L68 82L64 90L56 88L50 95L44 88L36 90L32 82L23 82L21 74L13 71L14 63L8 58L12 50L8 42L14 37L13 29L21 26L23 18L32 18L36 10L44 12L50 5Z" fill="#3F51B5" />
+        <circle cx="45" cy="45" r="18" stroke="white" strokeWidth="5" />
+        <line x1="58" y1="58" x2="72" y2="72" stroke="white" strokeWidth="7" strokeLinecap="round" />
+        <path d="M36 45L42 51L55 37" stroke="white" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
+const RISK_THEMES: Record<string, { gradient: string; text: string; label: string; }> = {
+  'BAIXO': { gradient: 'from-emerald-100 to-emerald-300', text: 'text-slate-950', label: 'Baixo Risco' },
+  'MEDIO': { gradient: 'from-orange-100 to-orange-300', text: 'text-slate-950', label: 'Médio Risco' },
+  'ALTO': { gradient: 'from-red-100 to-red-300', text: 'text-slate-950', label: 'Alto Risco' },
+  'CONDICIONADO': { gradient: 'from-blue-100 to-blue-300', text: 'text-slate-950', label: 'Risco Condicionado' },
+};
+
+const PORTE_THEMES: Record<string, { text: string; bg: string; border: string; icon: any; }> = {
+  'Porte III': { 
+    text: 'text-red-700', 
+    bg: 'bg-red-50', 
+    border: 'border-red-200',
+    icon: AlertTriangle
+  },
+  'Porte II e III': { 
+    text: 'text-amber-700', 
+    bg: 'bg-amber-50', 
+    border: 'border-amber-200',
+    icon: AlertCircle
+  },
+  'Porte I, II e III': { 
+    text: 'text-emerald-700', 
+    bg: 'bg-emerald-50', 
+    border: 'border-emerald-200',
+    icon: CheckCircle2
+  }
+};
+
+const getPorteTheme = (porte?: string) => {
+  if (!porte) return PORTE_THEMES['Porte I, II e III'];
+  return PORTE_THEMES[porte] || PORTE_THEMES['Porte I, II e III'];
+};
+
+function RiskClassificationMatrix() {
+  return (
+    <div className="mt-12 mb-20 px-4 space-y-8">
+      <div className="text-center space-y-4">
+         <h2 className="text-slate-900 font-black text-3xl md:text-4xl tracking-tight leading-tight uppercase">
+          Classificação de Risco Sanitário - Como Funciona?
+        </h2>
+        <p className="text-slate-600 font-bold max-w-xl mx-auto">
+          Entenda o nível de exigência sanitária necessário para o funcionamento da sua atividade, conforme estabelecido pela Resolução SESA nº 1.034/2020 e pelo Decreto Estadual nº 11.063, de 29 de agosto de 2025, do Paraná.
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 animate-in fade-in duration-1000">
+        {Object.entries(RISK_THEMES).map(([key, theme]) => (
+          <div key={key} className={`bg-gradient-to-br ${theme.gradient} ${theme.text} p-10 flex flex-col gap-6 transition-all hover:scale-[1.01] cursor-pointer border border-slate-950/20`}>
+            <span className="font-black text-xl tracking-tight leading-tight text-center">{theme.label}</span>
+            
+            <p className="text-xs font-bold leading-relaxed opacity-95 text-justify flex-grow">
+              {key === 'BAIXO' && "Atividade econômica dispensada de licenciamento sanitário para funcionamento."}
+              {key === 'MEDIO' && "Licença sanitária emitida de forma simplificada, sem inspeção prévia."}
+              {key === 'ALTO' && "Exige inspeção sanitária e análise documental prévia à operação."}
+              {key === 'CONDICIONADO' && "Definido após respostas a questionário específico sobre a atividade."}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 max-w-5xl mx-auto pt-10">
+          <a href="https://www.saude.pr.gov.br/Pagina/Licenciamento-Sanitario" target="_blank" className="bg-white p-8 rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all flex items-center justify-between group border-l-8 border-[#3F51B5] gap-6">
+            <span className="text-slate-800 font-bold text-sm md:text-lg leading-relaxed tracking-tight flex-1">
+              Acesse o <span className="font-black text-[#3F51B5]">SITE</span> oficial da Secretaria de Estado da Saúde do Paraná (SESA) para conferir o acervo completo da legislação sanitária no Estado.
+            </span>
+            <div className="w-12 h-12 bg-[#3F51B5] rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform shrink-0">
+              <ArrowRight className="w-6 h-6" />
+            </div>
+          </a>
+          <a href="https://prudentopolisprscp.equiplano.com.br:5028/tramitacaoProcesso/#/abertura-processo/entidade/41dd0a3a-f16f-4e8f-9b2a-8832e9191835/28" target="_blank" className="bg-white p-8 rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all flex items-center gap-6 group border-l-8 border-[#3F51B5]">
+            <div className="w-12 h-12 bg-[#3F51B5] rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform shrink-0">
+              <ArrowRight className="w-6 h-6" />
+            </div>
+            <span className="text-slate-800 font-bold text-sm md:text-lg leading-relaxed tracking-tight flex-1">
+              Empresas em <span className="font-black text-[#3F51B5]">Prudentópolis – PR</span>: Solicite ou renove sua licença sanitária aqui.
+            </span>
+          </a>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1" className="border-none">
+              <AccordionTrigger className="bg-white p-8 rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all flex items-center gap-6 group border-l-8 border-[#3F51B5] hover:no-underline">
+                <span className="text-slate-800 font-bold text-sm md:text-lg leading-relaxed tracking-tight flex-1 text-left">
+                  Material para <span className="font-black text-[#3F51B5]">DOWNLOAD</span>: Manuais e orientações.
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="p-4">
+                <MaterialsList />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+      </div>
+    </div>
+  );
+}
+
+function ContactSection() {
+  return (
+    <div className="my-12 px-4 w-full">
+      <div className="max-w-4xl mx-auto">
+        <Card className="bg-white border-t-4 border-[#3F51B5] rounded-[2rem] p-8 md:p-12 shadow-xl space-y-10 text-center">
+          <h4 className="font-black text-[#3F51B5] text-xs tracking-[0.3em] uppercase">FALE CONOSCO</h4>
+          <div className="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16">
+            <a href="https://wa.me/5542935059222" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group transition-all">
+              <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600 group-hover:scale-110 transition-all">
+                <MessageCircle className="w-7 h-7" />
+              </div>
+              <div className="text-left">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">WhatsApp</p>
+                <p className="font-black text-slate-700 text-base md:text-lg tracking-tight">(42) 93505 9222</p>
+              </div>
+            </a>
+            <div className="flex items-center gap-4 group transition-all w-full md:w-auto">
+              <div className="p-3 bg-blue-50 rounded-xl text-[#3F51B5] group-hover:scale-110 transition-all">
+                <Mail className="w-7 h-7" />
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">E-mail Institucional</p>
+                <a href="mailto:devisat@prudentopolis.pr.gov.br" className="font-black text-slate-700 text-xs md:text-lg tracking-tight block break-all md:break-normal">
+                  devisat@prudentopolis.pr.gov.br
+                </a>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  const db = useFirestore(); 
+  const [data, setData] = useState<CompanyData | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [isPending, startTransition] = useTransition();
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [currentDate, setCurrentDate] = useState('');
+
+  useEffect(() => {
+    setCurrentDate(new Date().toLocaleString('pt-BR'));
+  }, []);
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({ 
+    resolver: zodResolver(schema),
+    defaultValues: { cnpj: '' }
+  });
+
+  const result: RiskAnalysisResult | null = data ? analyzeRisk(data.cnaes || [], answers) : null;
+  const currentTheme = result?.level ? (RISK_THEMES[result.level] || RISK_THEMES['NÃO ENCONTRADO']) : RISK_THEMES['NÃO ENCONTRADO'];
+
+  const handleNewQuery = () => {
+    setData(null);
+    setAnswers({});
+    setApiError(null);
+    reset();
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const onSubmit = (values: any) => {
+    const cleanedCnpj = values.cnpj.replace(/\D/g, '');
+    setApiError(null);
+    setAnswers({}); 
+
+    startTransition(async () => {
+      try {
+        if (db) {
+          const docRef = doc(db, 'companies', cleanedCnpj);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const cached = docSnap.data() as CompanyData;
+            if (cached && Array.isArray(cached.cnaes) && cached.cnaes.length > 0) {
+              setData(cached);
+              return;
+            }
+          }
+        }
+
+        const res = await fetchCnpjData(values.cnpj);
+        if (res && res.success) {
+          setData(res.data);
+          if (db) {
+            setDoc(doc(db, 'companies', cleanedCnpj), { ...res.data, updatedAt: serverTimestamp() }).catch(console.error);
+            addDoc(collection(db, 'queries'), {
+              cnpj: cleanedCnpj,
+              timestamp: serverTimestamp(),
+              riskLevel: analyzeRisk(res.data.cnaes, {}).level
+            }).catch(console.error);
+          }
+        } else {
+          setApiError(res?.error || "SISTEMA FEDERAL TEMPORARIAMENTE INDISPONÍVEL.");
+        }
+      } catch (e) {
+        setApiError("ERRO TÉCNICO NO PROCESSAMENTO.");
+        console.error(e);
+      }
+    });
+  };
+
+  return (
+    <div className="min-h-screen relative font-sans">
+      <FloatingMaterialsIcon />
+      <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 space-y-12 relative z-10">
+        {!data && (
+          <header className="text-center animate-in fade-in duration-1000 space-y-6">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <Image src={newLogo} alt="Agiliza VISA Logo" width={300} height={300} className="w-24 h-24 md:w-48 md:h-48 object-contain" referrerPolicy="no-referrer" />
+              <h1 className="text-4xl md:text-7xl font-black tracking-tighter uppercase flex items-baseline justify-center">
+                <span className="text-slate-900">Agiliza</span><span className="text-4xl md:text-7xl bg-clip-text text-transparent bg-gradient-to-tr from-cyan-400 via-blue-500 to-blue-300 font-black">VISA</span>
+              </h1>
+            </div>
+            <p className="text-fluid-subtitle text-slate-600 font-bold max-w-2xl mx-auto leading-relaxed px-4 uppercase">
+              CONSULTE A CLASSIFICAÇÃO DE RISCO SANITÁRIO DE QUALQUER EMPRESA NO PARANÁ PELO CNPJ.
+            </p>
+          </header>
+        )}
+
+        <main className="max-w-4xl mx-auto w-full">
+          {!data ? (
+            <div className="space-y-12">
+              <Card className="p-8 md:p-20 bg-white border border-slate-200 rounded-[3rem] shadow-2xl overflow-hidden relative">
+                {apiError && (
+                  <div className="mb-10 p-6 bg-rose-50 border-l-4 border-rose-500 rounded-2xl shadow-sm">
+                    <span className="error-text-technical text-rose-700 text-xs">{apiError}</span>
+                  </div>
+                )}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-12">
+                  <div className="space-y-6 text-center">
+                    <div className="space-y-2">
+                      <Label className="font-black text-xs md:text-sm text-slate-700 tracking-[0.5em] block uppercase mb-4">
+                        Informe o CNPJ
+                      </Label>
+                      <div className="relative group">
+                        <Input 
+                          {...register('cnpj')} 
+                          inputMode="numeric"
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            e.target.value = val;
+                            register('cnpj').onChange(e);
+                          }}
+                          placeholder="00.000.000/0000-00" 
+                          className="h-20 md:h-28 text-2xl md:text-4xl text-center border-2 border-slate-200 bg-white rounded-[2rem] font-mono font-black text-indigo-700 focus:bg-white focus:border-indigo-500 focus:ring-8 focus:ring-indigo-500/10 shadow-inner transition-all placeholder:text-slate-300 hover:border-slate-300" 
+                        />
+                      </div>
+                    </div>
+                    {errors.cnpj && <p className="text-rose-600 text-[11px] font-black uppercase tracking-wider animate-bounce">{String(errors.cnpj.message).toUpperCase()}</p>}
+                  </div>
+                  <button type="submit" disabled={isPending} className="w-full h-16 md:h-20 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:shadow-[0_10px_30px_rgba(79,70,229,0.3)] text-white rounded-[1.5rem] font-black text-lg md:text-xl flex items-center justify-center transition-all shadow-xl active:scale-95 disabled:opacity-50 uppercase">
+                    {isPending ? <Loader2 className="animate-spin mr-3 w-6 h-6" /> : <Search className="mr-3 w-6 h-6" />}
+                    Consultar Risco Sanitário
+                  </button>
+                </form>
+              </Card>
+
+              <RiskClassificationMatrix />
+              
+              <SimpleCnaeQuery />
+              
+              <div className="bg-[#3F51B5] p-10 rounded-[2.5rem] border border-blue-400 flex flex-col md:flex-row items-center gap-8 shadow-2xl">
+                <div className="p-4 bg-white/10 rounded-3xl backdrop-blur-sm">
+                  <Megaphone className="w-12 h-12 text-white -rotate-12" />
+                </div>
+                <div className="space-y-2 text-center md:text-left">
+                  <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">ATENÇÃO EMPREENDEDOR!</h3>
+                  <p className="text-blue-100 font-bold text-xs md:text-sm uppercase tracking-wide opacity-90">MAIS DE 900 ATIVIDADES SÃO DISPENSADAS DE LICENCIAMENTO NO ESTADO DO PARANÁ.</p>
+                </div>
+              </div>
+              <ContactSection />
+            </div>
+          ) : (
+            <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-700">
+              <Card className={`overflow-hidden border-t-8 ${currentTheme.border} bg-white border border-slate-200 rounded-[2.5rem] shadow-2xl`}>
+                <div className={`${currentTheme.bg} py-12 px-8 text-center ${currentTheme.border}`}>
+                  <p className={`text-[9px] font-black ${currentTheme.text} tracking-[0.4em] mb-4 uppercase`}>Classificação do Estabelecimento</p>
+                  <h3 className={`text-4xl md:text-6xl lg:text-7xl font-black ${currentTheme.text} tracking-tighter uppercase leading-tight`}>
+                    {result?.level === 'CONDICIONADO' ? 'Risco Condicionado' : 
+                     result?.level === 'NÃO ENCONTRADO' ? 'Atividade Não Localizada' : 
+                     `${result?.level || 'SEM'} Risco Sanitário`}
+                  </h3>
+                  {result?.porte && (
+                    <div className={`mt-6 p-4 rounded-2xl border flex items-center justify-center gap-3 ${getPorteTheme(result.porte).bg} ${getPorteTheme(result.porte).border}`}>
+                      {(() => {
+                        const ThemeIcon = getPorteTheme(result.porte).icon;
+                        return <ThemeIcon className={`w-5 h-5 ${getPorteTheme(result.porte).text}`} />;
+                      })()}
+                      <p className={`text-[10px] md:text-xs font-black ${getPorteTheme(result.porte).text} uppercase tracking-wider`}>
+                        Responsabilidade Fiscal: {result.porte}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="p-6 md:p-12 space-y-12">
+                  <div className="text-center space-y-3">
+                    <h2 className="text-xl md:text-3xl font-black text-slate-900 uppercase tracking-tight leading-tight">{data.razao_social}</h2>
+                    <div className="inline-block px-5 py-1.5 bg-slate-100 rounded-full border border-slate-200">
+                      <p className="text-indigo-700 font-mono text-base md:text-xl font-bold tracking-widest">{data.cnpj}</p>
+                    </div>
+                  </div>
+                  
+                  {result && (
+                    <div className="relatorio-tecnico bg-slate-50 p-6 md:p-10 rounded-[1.5rem] border border-slate-200 text-slate-700 text-xs md:text-lg shadow-inner uppercase">
+                      {result.message.split(' ').map((word, i) => 
+                        word === 'DISPENSADA' || word === 'SIMPLIFICADA' || word === 'INSPEÇÃO' ? 
+                        <span key={i} className="font-black text-indigo-700">{word} </span> : word + ' '
+                      )}
+                    </div>
+                  )}
+
+                  {result?.requiresPba && (
+                    <div className="p-6 bg-rose-50 border border-rose-200 rounded-[1.5rem] text-center space-y-3">
+                      <p className="font-black text-rose-800 text-base uppercase">⚠️ Exigência de Projeto (PBA)</p>
+                      <p className="text-rose-600/80 font-bold text-[10px] uppercase tracking-wide">REQUER APROVAÇÃO PRÉVIA DE PROJETO BÁSICO DE ARQUITETURA ANTES DA LICENÇA.</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                       <h4 className="font-black text-slate-400 text-[10px] tracking-widest whitespace-nowrap uppercase">Detalhamento CNAE</h4>
+                       <div className="h-px bg-slate-200 w-full"></div>
+                    </div>
+                    <div className="grid gap-3">
+                      {(data.cnaes || []).map((c, idx) => {
+                        const cnaeRes = resolveCnaeRisk(c.code, answers);
+                        const cnaeTheme = RISK_THEMES[cnaeRes.risk] || RISK_THEMES['NÃO ENCONTRADO'];
+                        return (
+                          <div key={`${c.code}-${idx}`} className={`p-5 md:p-8 rounded-[1.5rem] border ${cnaeTheme.border} bg-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm`}>
+                              <div className="space-y-1.5 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <code className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">{c.code}</code>
+                                </div>
+                                <p className="text-xs md:text-base text-slate-800 font-extrabold uppercase">{c.description}</p>
+                                {cnaeRes.porte && (
+                                  <div className={`mt-2 p-3 rounded-xl border flex items-center gap-3 w-fit ${getPorteTheme(cnaeRes.porte).bg} ${getPorteTheme(cnaeRes.porte).border}`}>
+                                    {(() => {
+                                      const ThemeIcon = getPorteTheme(cnaeRes.porte).icon;
+                                      return <ThemeIcon className={`w-4 h-4 ${getPorteTheme(cnaeRes.porte).text}`} />;
+                                    })()}
+                                    <p className={`text-[9px] font-black ${getPorteTheme(cnaeRes.porte).text} uppercase italic`}>
+                                      Responsabilidade de fiscalização: {cnaeRes.porte}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            <div className="flex justify-end">
+                              <RiskBadge level={cnaeRes.risk} />
+                            </div>
+                            {cnaeRes.risk === 'CONDICIONADO' && cnaeRes.path && (
+                              <div className="w-full mt-4 p-6 bg-slate-50 rounded-xl space-y-5 border border-slate-200">
+                                <p className="font-black text-slate-500 text-[10px] uppercase tracking-widest leading-snug">{cnaeRes.question}</p>
+                                <RadioGroup value={answers[cnaeRes.path] || ""} onValueChange={(v) => setAnswers(prev => ({ ...prev, [cnaeRes.path!]: v }))} className="flex gap-8">
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Sim" id={`${cnaeRes.path}-sim`} className="h-5 w-5 border-indigo-700" />
+                                    <Label htmlFor={`${cnaeRes.path}-sim`} className="font-black text-slate-800 text-xs cursor-pointer">SIM</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Não" id={`${cnaeRes.path}-nao`} className="h-5 w-5 border-indigo-700" />
+                                    <Label htmlFor={`${cnaeRes.path}-nao`} className="font-black text-slate-800 text-xs cursor-pointer">NÃO</Label>
+                                  </div>
+                                </RadioGroup>
+                              </div>
+                            )}
+                          </div>
+                      );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-8 pt-8 border-t border-slate-200">
+                    <p className="text-[9px] text-slate-400 font-black tracking-widest uppercase">Relatório Emitido: {currentDate}</p>
+                    <button onClick={handleNewQuery} className="h-14 px-10 rounded-full border-2 border-slate-200 text-slate-600 font-black uppercase text-[10px] tracking-widest hover:border-indigo-700 hover:text-indigo-700 transition-all flex items-center justify-center active:scale-95">
+                      <RotateCcw className="mr-2 w-4 h-4" /> Efetuar Nova Pesquisa
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+        </main>
+        <footer className="text-center pt-12 border-t border-slate-100 pb-8 space-y-4">
+          <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">
+            O Agiliza Visa é um projeto desenvolvido sem qualquer finalidade comercial ou lucrativa.
+          </p>
+        </footer>
+      </div>
+    </div>
+  );
+}
+-e 
+
+--- src/app/actions.ts ---
+'use server';
+
+/**
+ * @fileOverview AÇÃO DE SERVIDOR ULTRA-RESILIENTE COM DIAGNÓSTICO DE API.
+ * PREVINE ERRO 500 ATRAVÉS DE CAPTURA ABSOLUTA DE EXCEÇÕES E ESCUDO DE REDE.
+ */
+
+import type { CompanyData, Cnae } from '@/lib/types';
+
+export type FetchResult = 
+  | { success: true; data: CompanyData } 
+  | { success: false; error: string };
+
+export async function fetchCnpjData(cnpj: string): Promise<FetchResult> {
+  try {
+    const cleaned = cnpj ? String(cnpj).replace(/\D/g, '') : '';
+    if (cleaned.length !== 14) return { success: false, error: "CNPJ INVÁLIDO. REQUER 14 NÚMEROS." };
+
+    // ESCUDO DE PERFORMANCE: TIMEOUT DE 7 SEGUNDOS PARA NÃO TRAVAR O SERVIDOR
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleaned}`, {
+      method: 'GET',
+      headers: { 
+        'Accept': 'application/json', 
+        'User-Agent': 'AgilizaVISA-HighPerformance/2.0' 
+      },
+      signal: controller.signal,
+      cache: 'no-store'
+    });
+
+    clearTimeout(timeoutId);
+
+    if (res.status === 404) return { success: false, error: "CNPJ NÃO ENCONTRADO NA BASE FEDERAL." };
+    if (res.status === 429) return { success: false, error: "LIMITE DE REQUISIÇÕES EXCEDIDO NA API FEDERAL. TENTE NOVAMENTE EM ALGUNS MINUTOS." };
+    if (res.status >= 500) return { success: false, error: "SISTEMA FEDERAL EM MANUTENÇÃO." };
+    
+    if (!res.ok) return { success: false, error: "BASE EXTERNA INDISPONÍVEL." };
+
+    const data = await res.json();
+    if (!data || typeof data !== 'object') return { success: false, error: "DADOS INVÁLIDOS NA RESPOSTA." };
+
+    const normalize = (c: any) => String(c || '').replace(/\D/g, '').padStart(7, '0');
+
+    const cnaes: Cnae[] = [];
+    if (data.cnae_fiscal) {
+      cnaes.push({ 
+        code: normalize(data.cnae_fiscal), 
+        description: String(data.cnae_fiscal_descricao || "ATIVIDADE PRINCIPAL").toUpperCase()
+      });
+    }
+    
+    if (Array.isArray(data.cnaes_secundarios)) {
+      data.cnaes_secundarios.forEach((c: any) => {
+        const code = c.codigo || c.code;
+        if (code) {
+          cnaes.push({ 
+            code: normalize(code), 
+            description: String(c.descricao || c.description || "ATIVIDADE SECUNDÁRIA").toUpperCase()
+          });
+        }
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        razao_social: String(data.razao_social || data.nome_fantasia || "NÃO INFORMADO").toUpperCase(),
+        nome_fantasia: String(data.nome_fantasia || "").toUpperCase(),
+        cnpj: String(data.cnpj || cleaned),
+        cnaes: cnaes
+      }
+    };
+  } catch (error: any) {
+    console.error(error);
+    if (error.name === 'AbortError') return { success: false, error: "A CONSULTA DEMOROU MUITO (TIMEOUT). TENTE NOVAMENTE." };
+    return { success: false, error: "FALHA TÉCNICA NA COMUNICAÇÃO EXTERNA." };
+  }
+}
+-e 
+
+--- src/app/layout.tsx ---
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { Toaster } from '@/components/ui/toaster';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
+
+import { HeaderBanner } from '@/components/HeaderBanner';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'AgilizaVISA – Paraná',
+  description: 'Portal informativo para consultar a classificação de risco sanitário de empresas no Paraná, com base na Resolução SESA nº 1034/2020 e Decreto Estadual nº 10.590/2025.',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="https://picsum.photos/seed/1/32/32" />
+      </head>
+      <body className={inter.className}>
+        <FirebaseClientProvider>
+          <HeaderBanner />
+          {children}
+          <Toaster />
+        </FirebaseClientProvider>
+      </body>
+    </html>
+  );
+}
+-e 
+
+--- src/firebase/firestore/use-doc.tsx ---
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { onSnapshot, DocumentReference, DocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { errorEmitter } from '../error-emitter';
+import { FirestorePermissionError } from '../errors';
+
+export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!ref) return;
+
+    const unsubscribe = onSnapshot(ref, 
+      (snapshot: DocumentSnapshot<T>) => {
+        setData(snapshot.data() || null);
+        setLoading(false);
+      },
+      async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: ref.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [ref]);
+
+  return { data, loading };
+}
+-e 
+
+--- src/firebase/firestore/use-collection.tsx ---
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { onSnapshot, Query, QuerySnapshot, DocumentData } from 'firebase/firestore';
+import { errorEmitter } from '../error-emitter';
+import { FirestorePermissionError } from '../errors';
+
+/**
+ * @fileOverview HOOK DE COLEÇÃO COM BLINDAGEM CONTRA FALHAS DE CONTEXTO.
+ */
+
+export function useCollection<T = DocumentData>(query: Query<T> | null) {
+  const [data, setData] = useState<T[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!query) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onSnapshot(query, 
+      (snapshot: QuerySnapshot<T>) => {
+        setData(snapshot.docs.map(doc => doc.data()));
+        setLoading(false);
+      },
+      async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'collection',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [query]);
+
+  return { data, loading };
+}
+-e 
+
+--- src/firebase/provider.tsx ---
+'use client';
+
+/**
+ * @fileOverview PROVEDOR DE CONTEXTO FIREBASE - COM JSX.
+ */
+
+import React, { createContext, useContext } from 'react';
+import { FirebaseApp } from 'firebase/app';
+import { Firestore } from 'firebase/firestore';
+import { Auth } from 'firebase/auth';
+
+interface FirebaseContextProps {
+  app: FirebaseApp | null;
+  db: Firestore | null;
+  auth: Auth | null;
+}
+
+const FirebaseContext = createContext<FirebaseContextProps>({
+  app: null,
+  db: null,
+  auth: null
+});
+
+export const useFirebase = () => useContext(FirebaseContext);
+export const useFirestore = () => useContext(FirebaseContext).db;
+export const useAuth = () => useContext(FirebaseContext).auth;
+export const useFirebaseApp = () => useContext(FirebaseContext).app;
+
+export const FirebaseProvider: React.FC<{
+  children: React.ReactNode;
+  app: FirebaseApp | null;
+  db: Firestore | null;
+  auth: Auth | null;
+}> = ({ children, app, db, auth }) => {
+  return (
+    <FirebaseContext.Provider value={{ app, db, auth }}>
+      {children}
+    </FirebaseContext.Provider>
+  );
+};-e 
+
+--- src/firebase/error-emitter.ts ---
+
+'use client';
+
+/**
+ * @fileOverview Emissor de eventos simplificado para ambiente de navegador.
+ * Evita dependência do módulo 'events' do Node.js que causa falhas no build client-side.
+ */
+
+type Listener = (data: any) => void;
+
+class SimpleEventEmitter {
+  private listeners: Record<string, Listener[]> = {};
+
+  on(event: string, callback: Listener) {
+    if (!this.listeners[event]) this.listeners[event] = [];
+    this.listeners[event].push(callback);
+  }
+
+  off(event: string, callback: Listener) {
+    if (!this.listeners[event]) return;
+    this.listeners[event] = this.listeners[event].filter(l => l !== callback);
+  }
+
+  emit(event: string, data: any) {
+    if (!this.listeners[event]) return;
+    this.listeners[event].forEach(l => l(data));
+  }
+}
+
+export const errorEmitter = new SimpleEventEmitter();
+-e 
+
+--- src/firebase/errors.ts ---
+
+'use client';
+
+export type SecurityRuleContext = {
+  path: string;
+  operation: 'get' | 'list' | 'create' | 'update' | 'delete' | 'write';
+  requestResourceData?: any;
+};
+
+export class FirestorePermissionError extends Error {
+  context: SecurityRuleContext;
+  constructor(context: SecurityRuleContext) {
+    super(`FALTA DE PERMISSÃO NO FIRESTORE: ${context.operation} em ${context.path}`);
+    this.name = 'FirestorePermissionError';
+    this.context = context;
+  }
+}
+-e 
+
+--- src/firebase/core.ts ---
+
+'use client';
+
+/**
+ * @fileOverview MOTOR DE INICIALIZAÇÃO FIREBASE - SEM JSX.
+ */
+
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getFirestore, Firestore, setLogLevel } from 'firebase/firestore';
+import { getAuth, Auth } from 'firebase/auth';
+import firebaseAppletConfig from '../../firebase-applet-config.json';
+
+export function initializeFirebase(): { app: FirebaseApp; db: Firestore; auth: Auth } | null {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const config = firebaseAppletConfig;
+    if (!config || !config.apiKey) {
+      console.error("Firebase config is missing or invalid:", config);
+      return null;
+    }
+
+    const app = !getApps().length
+      ? initializeApp({
+          apiKey: config.apiKey,
+          authDomain: config.authDomain,
+          projectId: config.projectId,
+          storageBucket: config.storageBucket,
+          messagingSenderId: config.messagingSenderId,
+          appId: config.appId,
+        })
+      : getApp();
+    const db = getFirestore(app, config.firestoreDatabaseId);
+    try {
+      setLogLevel('error');
+    } catch (err) {
+      // Ignore if fail
+    }
+    const auth = getAuth(app);
+    
+    return { app, db, auth };
+  } catch (error) {
+    console.error("Firebase initialization failed:", error);
+    return null;
+  }
+}
+-e 
+
+--- src/firebase/auth/use-user.tsx ---
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { useAuth } from '../provider';
+
+/**
+ * @fileOverview HOOK DE USUÁRIO COM BLINDAGEM SSR.
+ */
+
+export function useUser() {
+  const auth = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
+  }, [auth]);
+
+  return { user, loading };
+}
+-e 
+
+--- src/firebase/client-provider.tsx ---
+'use client';
+
+/**
+ * @fileOverview ESCUDO DE HIDRATAÇÃO ABSOLUTA - PROTEÇÃO CONTRA ERRO 500.
+ * GARANTE QUE O FIREBASE SEJA INICIALIZADO APENAS NO NAVEGADOR E NUNCA NO SERVIDOR.
+ */
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { initializeFirebase } from './core';
+import { FirebaseProvider } from './provider';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+
+// ESCUDO CONTRA CONSOLE WARN/ERROR COM ESTRUTURAS CIRCULARES (AI STUDIO LOG SERIALIZATION CRASH)
+if (typeof window !== 'undefined') {
+  const wrapConsole = (method: 'warn' | 'error') => {
+    try {
+      const original = console[method];
+      if (original && !(original as any).__isWrapped) {
+        const wrapped = function (...args: any[]) {
+          const safeArgs = args.map(arg => {
+            if (arg && typeof arg === 'object') {
+              try {
+                JSON.stringify(arg);
+                return arg;
+              } catch (e) {
+                return `[Circular or Unserializable Object: ${Object.prototype.toString.call(arg)}]`;
+              }
+            }
+            return arg;
+          });
+          original.apply(console, safeArgs);
+        };
+        (wrapped as any).__isWrapped = true;
+        console[method] = wrapped;
+      }
+    } catch (err) {
+      // Ignore errors on console wrapping
+    }
+  };
+  wrapConsole('warn');
+  wrapConsole('error');
+}
+
+export const FirebaseClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const instances = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return initializeFirebase();
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }, []);
+
+  // DURANTE SSR (SERVER-SIDE RENDERING), RENDEMOS UM PLACEHOLDER DE CARREGAMENTO.
+  // ISSO EVITA A COLISÃO DE ESTADO QUE GERA O ERRO 500.
+  if (!mounted || !instances) {
+    return (
+      <div className="min-h-screen bg-[#ECEFF1]" data-hydration="pending">
+      </div>
+    );
+  }
+
+  return (
+    <FirebaseProvider app={instances.app} db={instances.db} auth={instances.auth}>
+      <FirebaseErrorListener />
+      <div className="min-h-screen bg-[#ECEFF1]" data-hydration="complete">
+        {children}
+      </div>
+    </FirebaseProvider>
+  );
+};
+-e 
+
+--- src/firebase/index.ts ---
+
+'use client';
+
+/**
+ * @fileOverview HUB FIREBASE PURIFICADO - APENAS LOGICA TS PARA EVITAR ERROS DE BUILD.
+ */
+
+export * from './core';
+export { 
+  FirebaseProvider, 
+  useFirebase, 
+  useFirestore, 
+  useAuth, 
+  useFirebaseApp 
+} from './provider';
+export { useUser } from './auth/use-user';
+export { useCollection } from './firestore/use-collection';
+export { useDoc } from './firestore/use-doc';
+-e 
+
+--- src/firebase/config.ts ---
+'use client';
+
+export const firebaseConfig = {
+  apiKey: "AIzaSyBuoOrObhqApD5oGnCW4-vPOgTVQY0Omrk",
+  authDomain: "studio-5520742736-e67ae.firebaseapp.com",
+  projectId: "studio-5520742736-e67ae",
+  storageBucket: "studio-5520742736-e67ae.appspot.com",
+  messagingSenderId: "392089180591",
+  appId: "1:392089180591:web:0e095a82f82fa51c5d375a",
+  measurementId: "G-WKC421VX0W"
+};
+-e 
+
+--- src/hooks/use-toast.ts ---
+"use client"
+
+// Inspired by react-hot-toast library
+import * as React from "react"
+
+import type {
+  ToastActionElement,
+  ToastProps,
+} from "@/components/ui/toast"
+
+const TOAST_LIMIT = 1
+const TOAST_REMOVE_DELAY = 1000000
+
+type ToasterToast = ToastProps & {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
+}
+
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const
+
+let count = 0
+
+function genId() {
+  count = (count + 1) % Number.MAX_SAFE_INTEGER
+  return count.toString()
+}
+
+type ActionType = typeof actionTypes
+
+type Action =
+  | {
+      type: ActionType["ADD_TOAST"]
+      toast: ToasterToast
+    }
+  | {
+      type: ActionType["UPDATE_TOAST"]
+      toast: Partial<ToasterToast>
+    }
+  | {
+      type: ActionType["DISMISS_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
+  | {
+      type: ActionType["REMOVE_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
+
+interface State {
+  toasts: ToasterToast[]
+}
+
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return
+  }
+
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId)
+    dispatch({
+      type: "REMOVE_TOAST",
+      toastId: toastId,
+    })
+  }, TOAST_REMOVE_DELAY)
+
+  toastTimeouts.set(toastId, timeout)
+}
+
+export const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return {
+        ...state,
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+      }
+
+    case "UPDATE_TOAST":
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === action.toast.id ? { ...t, ...action.toast } : t
+        ),
+      }
+
+    case "DISMISS_TOAST": {
+      const { toastId } = action
+
+      // ! Side effects ! - This could be extracted into a dismissToast() action,
+      // but I'll keep it here for simplicity
+      if (toastId) {
+        addToRemoveQueue(toastId)
+      } else {
+        state.toasts.forEach((toast) => {
+          addToRemoveQueue(toast.id)
+        })
+      }
+
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === toastId || toastId === undefined
+            ? {
+                ...t,
+                open: false,
+              }
+            : t
+        ),
+      }
+    }
+    case "REMOVE_TOAST":
+      if (action.toastId === undefined) {
+        return {
+          ...state,
+          toasts: [],
+        }
+      }
+      return {
+        ...state,
+        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+      }
+  }
+}
+
+const listeners: Array<(state: State) => void> = []
+
+let memoryState: State = { toasts: [] }
+
+function dispatch(action: Action) {
+  memoryState = reducer(memoryState, action)
+  listeners.forEach((listener) => {
+    listener(memoryState)
+  })
+}
+
+type Toast = Omit<ToasterToast, "id">
+
+function toast({ ...props }: Toast) {
+  const id = genId()
+
+  const update = (props: ToasterToast) =>
+    dispatch({
+      type: "UPDATE_TOAST",
+      toast: { ...props, id },
+    })
+  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+
+  dispatch({
+    type: "ADD_TOAST",
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open) => {
+        if (!open) dismiss()
+      },
+    },
+  })
+
+  return {
+    id: id,
+    dismiss,
+    update,
+  }
+}
+
+function useToast() {
+  const [state, setState] = React.useState<State>(memoryState)
+
+  React.useEffect(() => {
+    listeners.push(setState)
+    return () => {
+      const index = listeners.indexOf(setState)
+      if (index > -1) {
+        listeners.splice(index, 1)
+      }
+    }
+  }, [state])
+
+  return {
+    ...state,
+    toast,
+    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+  }
+}
+
+export { useToast, toast }
+-e 
+
+--- src/hooks/use-mobile.tsx ---
+import * as React from "react"
+
+const MOBILE_BREAKPOINT = 768
+
+export function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const onChange = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    }
+    mql.addEventListener("change", onChange)
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    return () => mql.removeEventListener("change", onChange)
+  }, [])
+
+  return !!isMobile
+}
+-e 
+
+--- src/lib/types.ts ---
+/**
+ * @fileOverview CONTRATOS TÉCNICOS CENTRALIZADOS.
+ */
+
+export interface Cnae {
+  code: string;
+  description: string;
+  requiresPba?: boolean;
+  porte?: string;
+}
+
+export interface CompanyData {
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  cnaes: Cnae[];
+}
+
+export type RiskLevel = 'ALTO' | 'MEDIO' | 'BAIXO' | 'CONDICIONADO' | 'NÃO ENCONTRADO';
+
+export interface RiskAnalysisResult {
+  level: RiskLevel;
+  message: string;
+  unresolved: any[];
+  requiresPba: boolean;
+  porte?: string;
+}
+-e 
+
+--- src/lib/placeholder-images.ts ---
+import data from './placeholder-images.json';
+
+export type ImagePlaceholder = {
+  id: string;
+  description: string;
+  imageUrl: string;
+  imageHint: string;
+};
+
+export const PlaceHolderImages: ImagePlaceholder[] = data.placeholderImages;
+-e 
+
+--- src/lib/risk-analysis.ts ---
+'use client';
+
+/**
+ * @fileOverview MOTOR DE ANÁLISE TÉCNICA ULTRA-RESILIENTE.
+ * RESOLUÇÃO SESA Nº 1034/2020 | DECRETO ESTADUAL Nº 10.590/2025.
+ */
+
+import riskDataRaw from './cnae-risk.json';
+import type { Cnae, RiskLevel, RiskAnalysisResult } from './types';
+
+const riskData = Object.freeze(riskDataRaw as any) || { risks: {} };
+
+function normalizeCnae(code: string): string {
+  if (!code) return '';
+  return String(code).replace(/\D/g, '').padStart(7, '0');
+}
+
+function getPorteForCnae(code: string): string {
+  const normalized = normalizeCnae(code);
+  const exceptions: Record<string, string> = {
+    "2099199": "Porte III",
+    "0892403": "Porte III",
+    "1032501": "Porte III",
+    "1041400": "Porte II e III",
+    "1042200": "Porte II e III",
+    "1053800": "Porte III",
+    "1065102": "Porte II e III",
+    "1065103": "Porte II e III",
+    "1072401": "Porte II e III",
+    "1082100": "Porte II e III",
+    "1099602": "Porte III",
+    "1099603": "Porte III",
+    "1099606": "Porte III",
+    "1099607": "Porte III",
+    "1121600": "Porte III",
+    "1122404": "Porte III",
+    "1122499": "Porte III",
+    "1742701": "Porte III",
+    "1742702": "Porte III",
+    "2052500": "Porte III",
+    "2061400": "Porte III",
+    "2062200": "Porte III",
+    "2063100": "Porte III",
+    "2110600": "Porte III",
+    "2121101": "Porte III",
+    "2121102": "Porte III",
+    "2121103": "Porte III",
+    "2123800": "Porte III",
+    "2660400": "Porte III",
+    "3250701": "Porte III",
+    "3250702": "Porte III",
+    "3250703": "Porte III",
+    "3250704": "Porte III",
+    "3250705": "Porte III",
+    "4645101": "Porte II e III",
+    "4645102": "Porte II e III",
+    "4645103": "Porte II e III",
+    "4646001": "Porte II e III",
+    "4646002": "Porte II e III",
+    "4649408": "Porte II e III",
+    "4649409": "Porte II e III",
+    "4771702": "Porte II e III",
+    "5620101": "Porte II e III",
+    "8610101": "Porte III",
+    "8610102": "Porte III",
+    "8621601": "Porte III",
+    "8630507": "Porte III",
+    "8640201": "Porte II e III",
+    "8640203": "Porte III",
+    "8640204": "Porte II e III",
+    "8640206": "Porte II e III",
+    "8640207": "Porte II e III",
+    "8640209": "Porte III",
+    "8640210": "Porte III",
+    "8640211": "Porte III",
+    "8640212": "Porte III",
+    "8640214": "Porte III",
+    "8650007": "Porte III",
+    "8690902": "Porte II e III",
+    "8712300": "Porte II e III",
+    "9603305": "Porte II e III"
+  };
+  return exceptions[normalized] || "Porte I, II e III";
+}
+
+export function resolveCnaeRisk(code: string, answers: Record<string, string>): { 
+  risk: RiskLevel; 
+  question?: string; 
+  path?: string; 
+  requiresPba?: boolean;
+  porte?: string;
+} {
+  if (!riskData || !riskData.risks) return { risk: 'NÃO ENCONTRADO' };
+  
+  const normalizedSearchCode = normalizeCnae(code);
+  const levels: RiskLevel[] = ['ALTO', 'CONDICIONADO', 'MEDIO', 'BAIXO'];
+  const porte = getPorteForCnae(code);
+  
+  for (const level of levels) {
+    const cnaesList = riskData.risks[level]?.cnaes;
+    if (!Array.isArray(cnaesList)) continue;
+    
+    const found = cnaesList.find((c: any) => normalizeCnae(c.code) === normalizedSearchCode);
+    
+    if (found) {
+      if (level !== 'CONDICIONADO') {
+        return { 
+          risk: level as RiskLevel, 
+          requiresPba: !!found.requiresPba,
+          porte
+        };
+      }
+      
+      let node = found;
+      let path = normalizedSearchCode; 
+      while (node && node.question) {
+        const ans = answers[path];
+        if (!ans) return { risk: 'CONDICIONADO', question: node.question, path, porte };
+        
+        const outcome = node.outcomes?.[ans];
+        if (!outcome) return { risk: 'NÃO ENCONTRADO', porte };
+
+        if (typeof outcome === 'object' && outcome.risk) {
+          return { 
+            risk: outcome.risk as RiskLevel, 
+            requiresPba: !!outcome.requiresPba,
+            porte
+          };
+        }
+        
+        if (typeof outcome === 'string') {
+          return { risk: outcome as RiskLevel, requiresPba: false, porte };
+        }
+        
+        node = outcome;
+        path = `${path}:${ans}`;
+      }
+    }
+  }
+  return { risk: 'NÃO ENCONTRADO', porte };
+}
+
+export function analyzeRisk(cnaes: Cnae[], answers: Record<string, string>): RiskAnalysisResult {
+  let highest: RiskLevel = 'BAIXO';
+  let pbaRequired = false;
+  const unresolved: any[] = [];
+  
+  const priority: Record<string, number> = { 'ALTO': 4, 'CONDICIONADO': 3, 'MEDIO': 2, 'BAIXO': 1, 'NÃO ENCONTRADO': 0 };
+
+  if (!Array.isArray(cnaes) || cnaes.length === 0) {
+    return {
+      level: 'NÃO ENCONTRADO',
+      message: "Atividade econômica não localizada no rol taxativo oficial da Resolução SESA nº 1034/2020.",
+      unresolved: [],
+      requiresPba: false
+    };
+  }
+
+  cnaes.forEach(c => {
+    const res = resolveCnaeRisk(c.code, answers);
+    if (res.risk === 'CONDICIONADO') unresolved.push({ ...c, ...res });
+    if (res.requiresPba) pbaRequired = true;
+    
+    const currentPriority = priority[res.risk] ?? 0;
+    const highestPriority = priority[highest] ?? 0;
+    if (currentPriority > highestPriority) highest = res.risk as RiskLevel;
+  });
+
+  const finalLevel = unresolved.length > 0 ? 'CONDICIONADO' : highest;
+  
+  const messages: Record<string, string> = {
+    'ALTO': "Atividade econômica de Alto Risco (Nível III). Exige inspeção sanitária prévia obrigatória e aprovação documental/projeto pela autoridade sanitária competente antes do início das atividades. A emissão da Licença Sanitária está condicionada à conformidade verificada em vistoria local.",
+    'BAIXO': "Atividade econômica de Baixo Risco (Nível I). Esta classificação dispensa o estabelecimento da exigência de licenciamento sanitário para o início das operações, devendo o responsável observar rigorosamente as normas sanitárias vigentes.",
+    'MEDIO': "Atividade de Médio Risco (Nível II). Permite a emissão da Licença Sanitária de forma simplificada e o início imediato das operações após o licenciamento, sem prejuízo de fiscalização posterior para verificação das condições autodeclaradas.",
+    'CONDICIONADO': "Classificação de Risco Condicionada. A definição final do nível de risco depende obrigatoriamente das respostas técnicas às perguntas de autodeclaração relacionadas à infraestrutura e processos de trabalho.",
+    'NÃO ENCONTRADO': "Atividade econômica não localizada no rol taxativo oficial. Recomenda-se consulta direta à Vigilância Sanitária municipal para enquadramento individualizado conforme a complexidade das operações."
+  };
+
+  // Determinar porte global (mais restritivo)
+  let globalPorte = "Porte I, II e III";
+  const portes = cnaes.map(c => getPorteForCnae(c.code));
+  if (portes.some(p => p === "Porte III")) {
+    globalPorte = "Porte III";
+  } else if (portes.some(p => p === "Porte II e III") && globalPorte === "Porte I, II e III") {
+    globalPorte = "Porte II e III";
+  }
+
+  return {
+    level: finalLevel as RiskLevel,
+    message: messages[finalLevel] || messages['NÃO ENCONTRADO'],
+    unresolved,
+    requiresPba: pbaRequired,
+    porte: globalPorte
+  };
+}
+-e 
+
+--- src/lib/firebase.ts ---
+/** 
+ * @fileOverview ARQUIVO DESATIVADO PARA ELIMINAR CONFLITOS DE MÓDULO.
+ */
+export const app = null;
+export const db = null;
+export const auth = null;
+-e 
+
+--- src/lib/cnae-risk.json ---
+{
+    "risks": {
+        "BAIXO": {
+            "message": "ATIVIDADES DISPENSADAS DE LICENCIAMENTO SANITÁRIO. PODEM OPERAR SEM NECESSIDADE DE AUTORIZAÇÃO PRÉVIA.",
+            "cnaes": [
+                { "code": "0111-3/01" }, { "code": "0111-3/02" }, { "code": "0111-3/03" }, { "code": "0111-3/99" }, { "code": "0112-1/01" }, { "code": "0112-1/02" }, { "code": "0112-1/99" }, { "code": "0113-0/00" }, { "code": "0114-8/00" }, { "code": "0115-6/00" }, { "code": "0116-4/01" }, { "code": "0116-4/02" }, { "code": "0116-4/03" }, { "code": "0116-4/99" }, { "code": "0119-9/01" }, { "code": "0119-9/02" }, { "code": "0119-9/03" }, { "code": "0119-9/04" }, { "code": "0119-9/05" }, { "code": "0119-9/06" }, { "code": "0119-9/07" }, { "code": "0119-9/08" }, { "code": "0119-9/09" }, { "code": "0119-9/99" }, { "code": "0121-1/01" }, { "code": "0121-1/02" }, { "code": "0122-9/00" }, { "code": "0131-8/00" }, { "code": "0132-6/00" }, { "code": "0133-4/01" }, { "code": "0133-4/02" }, { "code": "0133-4/03" }, { "code": "0133-4/04" }, { "code": "0133-4/05" }, { "code": "0133-4/06" }, { "code": "0133-4/07" }, { "code": "0133-4/08" }, { "code": "0133-4/09" }, { "code": "0133-4/10" }, { "code": "0133-4/11" }, { "code": "0133-4/99" }, { "code": "0134-2/00" }, { "code": "0135-1/00" }, { "code": "0139-3/01" }, { "code": "0139-3/02" }, { "code": "0139-3/03" }, { "code": "0139-3/04" }, { "code": "0139-3/05" }, { "code": "0139-3/06" }, { "code": "0139-3/99" }, { "code": "0141-5/01" }, { "code": "0141-5/02" }, { "code": "0142-3/00" }, { "code": "0159-8/02" }, { "code": "0161-0/02" }, { "code": "0161-0/03" }, { "code": "0161-0/99" }, { "code": "0162-8/01" }, { "code": "0162-8/02" }, { "code": "0162-8/03" }, { "code": "0162-8/99" }, { "code": "0170-9/00" }, { "code": "0210-1/01" }, { "code": "0210-1/02" }, { "code": "0210-1/03" }, { "code": "0210-1/04" }, { "code": "0210-1/05" }, { "code": "0210-1/06" }, { "code": "0210-1/07" }, { "code": "0210-1/09" }, { "code": "0210-1/99" }, { "code": "0220-9/03" }, { "code": "0220-9/04" }, { "code": "0220-9/06" }, { "code": "0220-9/99" }, { "code": "0230-6/00" }, { "code": "0311-6/01" }, { "code": "0311-6/02" }, { "code": "0311-6/03" }, { "code": "0311-6/04" }, { "code": "0312-4/01" }, { "code": "0312-4/02" }, { "code": "0312-4/03" }, { "code": "0312-4/04" }, { "code": "0321-3/05" }, { "code": "0322-1/07" }, { "code": "0500-3/01" }, { "code": "0500-3/02" }, { "code": "0600-0/02" }, { "code": "0600-0/03" }, { "code": "0710-3/01" }, { "code": "0721-9/01" }, { "code": "0721-9/02" }, { "code": "0722-7/01" }, { "code": "0722-7/02" }, { "code": "0723-5/01" }, { "code": "0723-5/02" }, { "code": "0724-3/01" }, { "code": "0724-3/02" }, { "code": "0729-4/01" }, { "code": "0729-4/02" }, { "code": "0729-4/03" }, { "code": "0729-4/04" }, { "code": "0729-4/05" }, { "code": "0810-0/01" }, { "code": "0810-0/02" }, { "code": "0810-0/03" }, { "code": "0810-0/04" }, { "code": "0810-0/05" }, { "code": "0810-0/06" }, { "code": "0810-0/07" }, { "code": "0810-0/08" }, { "code": "0810-0/09" }, { "code": "0810-0/10" }, { "code": "0810-0/99" }, { "code": "0891-6/00" }, { "code": "0892-4/01" }, { "code": "0892-4/02" }, { "code": "0893-2/00" }, { "code": "0899-1/01" }, { "code": "0899-1/02" }, { "code": "0899-1/03" }, { "code": "0899-1/99" }, { "code": "0990-4/01" }, { "code": "0990-4/02" }, { "code": "0990-4/03" }, { "code": "1013-9/02" }, { "code": "1020-1/01" }, { "code": "1033-3/01" }, { "code": "1033-3/02" }, { "code": "1041-4/00" }, { "code": "1043-1/00" }, { "code": "1065-1/02" }, { "code": "1065-1/03" }, { "code": "1066-0/00" }, { "code": "1099-6/01" }, { "code": "1099-6/04" }, { "code": "1111-9/01" }, { "code": "1111-9/02" }, { "code": "1112-7/00" }, { "code": "1113-5/01" }, { "code": "1113-5/02" }, { "code": "1122-4/01" }, { "code": "1122-4/02" }, { "code": "1220-4/03" }, { "code": "1311-1/00" }, { "code": "1312-0/00" }, { "code": "1313-8/00" }, { "code": "1314-6/00" }, { "code": "1321-9/00" }, { "code": "1322-7/00" }, { "code": "1323-5/00" }, { "code": "1330-8/00" }, { "code": "1340-5/01" }, { "code": "1340-5/02" }, { "code": "1340-5/99" }, { "code": "1351-1/00" }, { "code": "1352-9/00" }, { "code": "1353-7/00" }, { "code": "1354-5/00" }, { "code": "1359-6/00" }, { "code": "1411-8/01" }, { "code": "1411-8/02" }, { "code": "1412-6/01" }, { "code": "1412-6/02" }, { "code": "1412-6/03" }, { "code": "1413-4/01" }, { "code": "1413-4/02" }, { "code": "1413-4/03" }, { "code": "1414-2/00" }, { "code": "1421-5/00" }, { "code": "1422-3/00" }, { "code": "1521-1/00" }, { "code": "1529-7/00" }, { "code": "1531-9/01" }, { "code": "1531-9/02" }, { "code": "1532-7/00" }, { "code": "1533-5/00" }, { "code": "1539-4/00" }, { "code": "1540-8/00" }, { "code": "1622-6/01" }, { "code": "1622-6/02" }, { "code": "1622-6/99" }, { "code": "1623-4/00" }, { "code": "1629-3/01" }, { "code": "1629-3/02" }, { "code": "1710-9/00" }, { "code": "1721-4/00" }, { "code": "1722-2/00" }, { "code": "1731-1/00" }, { "code": "1732-0/00" }, { "code": "1733-8/00" }, { "code": "1741-9/01" }, { "code": "1741-9/02" }, { "code": "1742-7/99" }, { "code": "1749-4/00" }, { "code": "1811-3/01" }, { "code": "1811-3/02" }, { "code": "1812-1/00" }, { "code": "1813-0/01" }, { "code": "1813-0/99" }, { "code": "1821-1/00" }, { "code": "1822-9/01" }, { "code": "1822-9/99" }, { "code": "1830-0/01" }, { "code": "1830-0/02" }, { "code": "1830-0/03" }, { "code": "2012-6/00" }, { "code": "2013-4/01" }, { "code": "2013-4/02" }, { "code": "2093-2/00" }, { "code": "2122-0/00" }, { "code": "2211-1/00" }, { "code": "2212-9/00" }, { "code": "2219-6/00" }, { "code": "2221-8/00" }, { "code": "2222-6/00" }, { "code": "2223-4/00" }, { "code": "2229-3/01" }, { "code": "2229-3/02" }, { "code": "2229-3/03" }, { "code": "2229-3/99" }, { "code": "2311-7/00" }, { "code": "2312-5/00" }, { "code": "2319-2/00" }, { "code": "2320-6/00" }, { "code": "2330-3/01" }, { "code": "2330-3/02" }, { "code": "2330-3/03" }, { "code": "2330-3/04" }, { "code": "2330-3/05" }, { "code": "2330-3/99" }, { "code": "2341-9/00" }, { "code": "2342-7/01" }, { "code": "2342-7/02" }, { "code": "2349-4/01" }, { "code": "2349-4/99" }, { "code": "2391-5/02" }, { "code": "2391-5/03" }, { "code": "2392-3/00" }, { "code": "2399-1/01" }, { "code": "2399-1/02" }, { "code": "2411-3/00" }, { "code": "2412-1/00" }, { "code": "2421-1/00" }, { "code": "2422-9/01" }, { "code": "2422-9/02" }, { "code": "2423-7/01" }, { "code": "2423-7/02" }, { "code": "2424-5/01" }, { "code": "2424-5/02" }, { "code": "2431-8/00" }, { "code": "2439-3/00" }, { "code": "2441-5/01" }, { "code": "2441-5/02" }, { "code": "2449-1/01" }, { "code": "2449-1/02" }, { "code": "2449-1/03" }, { "code": "2511-0/00" }, { "code": "2512-8/00" }, { "code": "2513-6/00" }, { "code": "2521-7/00" }, { "code": "2522-5/00" }, { "code": "2531-4/01" }, { "code": "2531-4/02" }, { "code": "2532-2/01" }, { "code": "2532-2/02" }, { "code": "2539-0/01" }, { "code": "2539-0/02" }, { "code": "2541-1/00" }, { "code": "2542-0/00" }, { "code": "2543-8/00" }, { "code": "2591-8/00" }, { "code": "2592-6/01" }, { "code": "2592-6/02" }, { "code": "2593-4/00" }, { "code": "2599-3/01" }, { "code": "2599-3/02" }, { "code": "2599-3/99" }, { "code": "2610-8/00" }, { "code": "2621-3/00" }, { "code": "2622-1/00" }, { "code": "2631-1/00" }, { "code": "2632-9/00" }, { "code": "2640-0/00" }, { "code": "2651-5/00" }, { "code": "2652-3/00" }, { "code": "2670-1/01" }, { "code": "2670-1/02" }, { "code": "2680-9/00" }, { "code": "2710-4/01" }, { "code": "2710-4/02" }, { "code": "2710-4/03" }, { "code": "2731-7/00" }, { "code": "2732-5/00" }, { "code": "2733-3/00" }, { "code": "2740-6/01" }, { "code": "2740-6/02" }, { "code": "2751-1/00" }, { "code": "2759-7/01" }, { "code": "2790-2/01" }, { "code": "2790-2/02" }, { "code": "2811-9/00" }, { "code": "2812-7/00" }, { "code": "2813-5/00" }, { "code": "2814-3/01" }, { "code": "2814-3/02" }, { "code": "2815-1/01" }, { "code": "2815-1/02" }, { "code": "2821-6/01" }, { "code": "2821-6/02" }, { "code": "2822-4/01" }, { "code": "2822-4/02" }, { "code": "2823-2/00" }, { "code": "2824-1/01" }, { "code": "2824-1/02" }, { "code": "2825-9/00" }, { "code": "2829-1/01" }, { "code": "2829-1/99" }, { "code": "2831-3/00" }, { "code": "2832-1/00" }, { "code": "2833-0/00" }, { "code": "2840-2/00" }, { "code": "2851-8/00" }, { "code": "2852-6/00" }, { "code": "2853-4/00" }, { "code": "2854-2/00" }, { "code": "2861-5/00" }, { "code": "2862-3/00" }, { "code": "2863-1/00" }, { "code": "2864-0/00" }, { "code": "2865-8/00" }, { "code": "2866-6/00" }, { "code": "2869-1/00" }, { "code": "2910-7/01" }, { "code": "2910-7/02" }, { "code": "2910-7/03" }, { "code": "2920-4/01" }, { "code": "2920-4/02" }, { "code": "2930-1/01" }, { "code": "2930-1/02" }, { "code": "2930-1/03" }, { "code": "2941-7/00" }, { "code": "2942-5/00" }, { "code": "2943-3/00" }, { "code": "2944-1/00" }, { "code": "2945-0/00" }, { "code": "2949-2/01" }, { "code": "2950-6/00" }, { "code": "3011-3/02" }, { "code": "3012-1/00" }, { "code": "3031-8/00" }, { "code": "3032-6/00" }, { "code": "3042-3/00" }, { "code": "3050-4/00" }, { "code": "3091-1/01" }, { "code": "3091-1/02" }, { "code": "3092-0/00" }, { "code": "3101-2/00" }, { "code": "3102-1/00" }, { "code": "3103-9/00" }, { "code": "3104-7/00" }, { "code": "3211-6/01" }, { "code": "3211-6/02" }, { "code": "3211-6/03" }, { "code": "3212-4/00" }, { "code": "3220-5/00" }, { "code": "3230-2/00" }, { "code": "3240-0/01" }, { "code": "3240-0/02" }, { "code": "3240-0/03" }, { "code": "3240-0/99" }, { "code": "3250-7/07" }, { "code": "3291-4/00" }, { "code": "3292-2/01" }, { "code": "3292-2/02" }, { "code": "3299-0/01" }, { "code": "3299-0/02" }, { "code": "3299-0/03" }, { "code": "3299-0/04" }, { "code": "3299-0/05" }, { "code": "3299-0/06" }, { "code": "3311-2/00" }, { "code": "3312-1/02" }, { "code": "3312-1/03" }, { "code": "3312-1/04" }, { "code": "3313-9/01" }, { "code": "3313-9/02" }, { "code": "3313-9/99" }, { "code": "3314-7/01" }, { "code": "3314-7/02" }, { "code": "3314-7/03" }, { "code": "3314-7/04" }, { "code": "3314-7/05" }, { "code": "3314-7/06" }, { "code": "3314-7/07" }, { "code": "3314-7/08" }, { "code": "3314-7/09" }, { "code": "3314-7/10" }, { "code": "3314-7/11" }, { "code": "3314-7/12" }, { "code": "3314-7/13" }, { "code": "3314-7/14" }, { "code": "3314-7/15" }, { "code": "3314-7/16" }, { "code": "3314-7/17" }, { "code": "3314-7/18" }, { "code": "3314-7/19" }, { "code": "3314-7/20" }, { "code": "3314-7/21" }, { "code": "3314-7/22" }, { "code": "3314-7/99" }, { "code": "3315-5/00" }, { "code": "3316-3/01" }, { "code": "3316-3/02" }, { "code": "3317-1/01" }, { "code": "3317-1/02" }, { "code": "3319-8/00" }, { "code": "3321-0/00" }, { "code": "3329-5/01" }, { "code": "3329-5/99" }, { "code": "3511-5/01" }, { "code": "3511-5/02" }, { "code": "3514-0/00" }, { "code": "3530-1/00" }, { "code": "3701-1/00" }, { "code": "3702-9/00" }, { "code": "4110-7/00" }, { "code": "4120-4/00" }, { "code": "4211-1/02" }, { "code": "4212-0/00" }, { "code": "4213-8/00" }, { "code": "4221-9/02" }, { "code": "4221-9/03" }, { "code": "4221-9/04" }, { "code": "4221-9/05" }, { "code": "4222-7/01" }, { "code": "4222-7/02" }, { "code": "4223-5/00" }, { "code": "4291-0/00" }, { "code": "4292-8/01" }, { "code": "4292-8/02" }, { "code": "4299-5/01" }, { "code": "4299-5/99" }, { "code": "4311-8/01" }, { "code": "4311-8/02" }, { "code": "4312-6/00" }, { "code": "4319-3/00" }, { "code": "4321-5/00" }, { "code": "4322-3/01" }, { "code": "4322-3/02" }, { "code": "4322-3/03" }, { "code": "4329-1/01" }, { "code": "4329-1/02" }, { "code": "4329-1/03" }, { "code": "4329-1/04" }, { "code": "4329-1/05" }, { "code": "4329-1/99" }, { "code": "4330-4/01" }, { "code": "4330-4/02" }, { "code": "4330-4/03" }, { "code": "4330-4/04" }, { "code": "4330-4/05" }, { "code": "4330-4/99" }, { "code": "4391-6/00" }, { "code": "4399-1/01" }, { "code": "4399-1/02" }, { "code": "4399-1/03" }, { "code": "4399-1/04" }, { "code": "4399-1/05" }, { "code": "4399-1/99" }, { "code": "4511-1/01" }, { "code": "4511-1/02" }, { "code": "4511-1/03" }, { "code": "4511-1/04" }, { "code": "4511-1/05" }, { "code": "4511-1/06" }, { "code": "4512-9/01" }, { "code": "4512-9/02" }, { "code": "4520-0/01" }, { "code": "4520-0/02" }, { "code": "4520-0/03" }, { "code": "4520-0/04" }, { "code": "4520-0/05" }, { "code": "4520-0/06" }, { "code": "4520-0/07" }, { "code": "4520-0/08" }, { "code": "4530-7/01" }, { "code": "4530-7/02" }, { "code": "4530-7/03" }, { "code": "4530-7/04" }, { "code": "4530-7/05" }, { "code": "4530-7/06" }, { "code": "4541-2/01" }, { "code": "4541-2/02" }, { "code": "4541-2/03" }, { "code": "4541-2/04" }, { "code": "4541-2/06" }, { "code": "4541-2/07" }, { "code": "4542-1/01" }, { "code": "4542-1/02" }, { "code": "4543-9/00" }, { "code": "4611-7/00" }, { "code": "4612-5/00" }, { "code": "4613-3/00" }, { "code": "4614-1/00" }, { "code": "4615-0/00" }, { "code": "4616-8/00" }, { "code": "4617-6/00" }, { "code": "4618-4/01" }, { "code": "4618-4/02" }, { "code": "4618-4/03" }, { "code": "4618-4/99" }, { "code": "4619-2/00" }, { "code": "4623-1/01" }, { "code": "4623-1/02" }, { "code": "4623-1/03" }, { "code": "4623-1/04" }, { "code": "4623-1/06" }, { "code": "4623-1/07" }, { "code": "4623-1/08" }, { "code": "4623-1/09" }, { "code": "4633-8/03" }, { "code": "4636-2/01" }, { "code": "4641-9/01" }, { "code": "4641-9/02" }, { "code": "4641-9/03" }, { "code": "4642-7/01" }, { "code": "4642-7/02" }, { "code": "4643-5/01" }, { "code": "4643-5/02" }, { "code": "4644-3/02" }, { "code": "4647-8/01" }, { "code": "4647-8/02" }, { "code": "4649-4/01" }, { "code": "4649-4/02" }, { "code": "4649-4/03" }, { "code": "4649-4/04" }, { "code": "4649-4/05" }, { "code": "4649-4/06" }, { "code": "4649-4/07" }, { "code": "4649-4/10" }, { "code": "4649-4/99" }, { "code": "4651-6/01" }, { "code": "4651-6/02" }, { "code": "4652-4/00" }, { "code": "4661-3/00" }, { "code": "4662-1/00" }, { "code": "4663-0/00" }, { "code": "4665-6/00" }, { "code": "4669-9/01" }, { "code": "4669-9/99" }, { "code": "4671-1/00" }, { "code": "4672-9/00" }, { "code": "4673-7/00" }, { "code": "4674-5/00" }, { "code": "4679-6/02" }, { "code": "4679-6/03" }, { "code": "4679-6/04" }, { "code": "4679-6/99" }, { "code": "4685-1/00" }, { "code": "4686-9/01" }, { "code": "4686-9/02" }, { "code": "4687-7/01" }, { "code": "4687-7/02" }, { "code": "4687-7/03" }, { "code": "4689-3/01" }, { "code": "4689-3/02" }, { "code": "4693-1/00" }, { "code": "4713-0/02" }, { "code": "4713-0/04" }, { "code": "4713-0/05" }, { "code": "4732-6/00" }, { "code": "4741-5/00" }, { "code": "4742-3/00" }, { "code": "4743-1/00" }, { "code": "4744-0/01" }, { "code": "4744-0/02" }, { "code": "4744-0/03" }, { "code": "4744-0/04" }, { "code": "4744-0/05" }, { "code": "4744-0/06" }, { "code": "4744-0/99" }, { "code": "4751-2/01" }, { "code": "4751-2/02" }, { "code": "4752-1/00" }, { "code": "4753-9/00" }, { "code": "4754-7/01" }, { "code": "4754-7/02" }, { "code": "4754-7/03" }, { "code": "4755-5/01" }, { "code": "4755-5/02" }, { "code": "4755-5/03" }, { "code": "4756-3/00" }, { "code": "4757-1/00" }, { "code": "4759-8/01" }, { "code": "4759-8/99" }, { "code": "4761-0/01" }, { "code": "4761-0/02" }, { "code": "4761-0/03" }, { "code": "4762-8/00" }, { "code": "4763-6/01" }, { "code": "4763-6/02" }, { "code": "4763-6/03" }, { "code": "4763-6/04" }, { "code": "4763-6/05" }, { "code": "4771-7/04" }, { "code": "4781-4/00" }, { "code": "4782-2/01" }, { "code": "4782-2/02" }, { "code": "4783-1/01" }, { "code": "4783-1/02" }, { "code": "4785-7/01" }, { "code": "4785-7/99" }, { "code": "4789-0/01" }, { "code": "4789-0/02" }, { "code": "4789-0/03" }, { "code": "4789-0/04" }, { "code": "4789-0/07" }, { "code": "4789-0/08" }, { "code": "4789-0/09" }, { "code": "4789-0/99" }, { "code": "4911-6/00" }, { "code": "4912-4/01" }, { "code": "4912-4/02" }, { "code": "4912-4/03" }, { "code": "4921-3/01" }, { "code": "4921-3/02" }, { "code": "4922-1/01" }, { "code": "4922-1/02" }, { "code": "4922-1/03" }, { "code": "4923-0/01" }, { "code": "4923-0/02" }, { "code": "4924-8/00" }, { "code": "4929-9/01" }, { "code": "4929-9/02" }, { "code": "4929-9/03" }, { "code": "4929-9/04" }, { "code": "4929-9/99" }, { "code": "4930-2/04" }, { "code": "4940-0/00" }, { "code": "4950-7/00" }, { "code": "5011-4/01" }, { "code": "5011-4/02" }, { "code": "5012-2/01" }, { "code": "5012-2/02" }, { "code": "5021-1/01" }, { "code": "5021-1/02" }, { "code": "5022-0/01" }, { "code": "5022-0/02" }, { "code": "5030-1/01" }, { "code": "5030-1/02" }, { "code": "5030-1/03" }, { "code": "5091-2/01" }, { "code": "5091-2/02" }, { "code": "5099-8/01" }, { "code": "5099-8/99" }, { "code": "5111-1/00" }, { "code": "5112-9/01" }, { "code": "5112-9/99" }, { "code": "5130-7/00" }, { "code": "5211-7/02" }, { "code": "5212-5/00" }, { "code": "5221-4/00" }, { "code": "5222-2/00" }, { "code": "5223-1/00" }, { "code": "5229-0/01" }, { "code": "5229-0/02" }, { "code": "5229-0/99" }, { "code": "5231-1/01" }, { "code": "5231-1/02" }, { "code": "5231-1/03" }, { "code": "5232-0/00" }, { "code": "5239-7/01" }, { "code": "5239-7/99" }, { "code": "5240-1/01" }, { "code": "5240-1/99" }, { "code": "5250-8/01" }, { "code": "5250-8/02" }, { "code": "5250-8/03" }, { "code": "5250-8/04" }, { "code": "5250-8/05" }, { "code": "5310-5/01" }, { "code": "5310-5/02" }, { "code": "5320-2/01" }, { "code": "5320-2/02" }, { "code": "5811-5/00" }, { "code": "5812-3/01" }, { "code": "5812-3/02" }, { "code": "5813-1/00" }, { "code": "5819-1/00" }, { "code": "5821-2/00" }, { "code": "5822-1/01" }, { "code": "5822-1/02" }, { "code": "5823-9/00" }, { "code": "5829-8/00" }, { "code": "5911-1/01" }, { "code": "5911-1/02" }, { "code": "5911-1/99" }, { "code": "5912-0/01" }, { "code": "5912-0/02" }, { "code": "5912-0/99" }, { "code": "5913-8/00" }, { "code": "5914-6/00" }, { "code": "5920-1/00" }, { "code": "6010-1/00" }, { "code": "6021-7/00" }, { "code": "6022-5/01" }, { "code": "6022-5/02" }, { "code": "6110-8/01" }, { "code": "6110-8/02" }, { "code": "6110-8/03" }, { "code": "6110-8/99" }, { "code": "6120-5/01" }, { "code": "6120-5/02" }, { "code": "6120-5/99" }, { "code": "6130-2/00" }, { "code": "6141-8/00" }, { "code": "6142-6/00" }, { "code": "6143-4/00" }, { "code": "6190-6/01" }, { "code": "6190-6/02" }, { "code": "6190-6/99" }, { "code": "6201-5/01" }, { "code": "6201-5/02" }, { "code": "6202-3/00" }, { "code": "6204-0/00" }, { "code": "6209-1/00" }, { "code": "6311-9/00" }, { "code": "6319-4/00" }, { "code": "6391-7/00" }, { "code": "6399-2/00" }, { "code": "6410-7/00" }, { "code": "6421-2/00" }, { "code": "6422-1/00" }, { "code": "6423-9/00" }, { "code": "6424-7/01" }, { "code": "6424-7/02" }, { "code": "6424-7/03" }, { "code": "6424-7/04" }, { "code": "6431-0/00" }, { "code": "6432-8/00" }, { "code": "6433-6/00" }, { "code": "6434-4/00" }, { "code": "6435-2/01" }, { "code": "6435-2/02" }, { "code": "6435-2/03" }, { "code": "6436-1/00" }, { "code": "6437-9/00" }, { "code": "6438-7/01" }, { "code": "6438-7/99" }, { "code": "6440-9/00" }, { "code": "6450-6/00" }, { "code": "6461-1/00" }, { "code": "6462-0/00" }, { "code": "6463-8/00" }, { "code": "6470-1/01" }, { "code": "6470-1/02" }, { "code": "6470-1/03" }, { "code": "6491-3/00" }, { "code": "6492-1/00" }, { "code": "6493-0/00" }, { "code": "6499-9/01" }, { "code": "6499-9/02" }, { "code": "6499-9/03" }, { "code": "6499-9/04" }, { "code": "6499-9/05" }, { "code": "6499-9/99" }, { "code": "6511-1/01" }, { "code": "6511-1/02" }, { "code": "6512-0/00" }, { "code": "6520-1/00" }, { "code": "6530-8/00" }, { "code": "6541-3/00" }, { "code": "6542-1/00" }, { "code": "6550-2/00" }, { "code": "6611-8/01" }, { "code": "6611-8/02" }, { "code": "6611-8/03" }, { "code": "6611-8/04" }, { "code": "6612-6/01" }, { "code": "6612-6/02" }, { "code": "6612-6/03" }, { "code": "6612-6/04" }, { "code": "6612-6/05" }, { "code": "6613-4/00" }, { "code": "6619-3/01" }, { "code": "6619-3/02" }, { "code": "6619-3/03" }, { "code": "6619-3/04" }, { "code": "6619-3/05" }, { "code": "6619-3/99" }, { "code": "6621-5/01" }, { "code": "6621-5/02" }, { "code": "6622-3/00" }, { "code": "6629-1/00" }, { "code": "6630-4/00" }, { "code": "6810-2/01" }, { "code": "6810-2/02" }, { "code": "6810-2/03" }, { "code": "6821-8/01" }, { "code": "6821-8/02" }, { "code": "6822-6/00" }, { "code": "6911-7/01" }, { "code": "6911-7/02" }, { "code": "6911-7/03" }, { "code": "6912-5/00" }, { "code": "6920-6/01" }, { "code": "6920-6/02" }, { "code": "7020-4/00" }, { "code": "7111-1/00" }, { "code": "7112-0/00" }, { "code": "7119-7/01" }, { "code": "7119-7/02" }, { "code": "7119-7/03" }, { "code": "7119-7/04" }, { "code": "7119-7/99" }, { "code": "7210-0/00" }, { "code": "7220-7/00" }, { "code": "7311-4/00" }, { "code": "7312-2/00" }, { "code": "7319-0/01" }, { "code": "7319-0/02" }, { "code": "7319-0/03" }, { "code": "7319-0/04" }, { "code": "7319-0/99" }, { "code": "7320-3/00" }, { "code": "7410-2/02" }, { "code": "7410-2/03" }, { "code": "7410-2/99" }, { "code": "7420-0/01" }, { "code": "7420-0/02" }, { "code": "7420-0/03" }, { "code": "7420-0/04" }, { "code": "7420-0/05" }, { "code": "7490-1/01" }, { "code": "7490-1/02" }, { "code": "7490-1/03" }, { "code": "7490-1/04" }, { "code": "7490-1/05" }, { "code": "7490-1/99" }, { "code": "7711-0/00" }, { "code": "7719-5/01" }, { "code": "7719-5/02" }, { "code": "7719-5/99" }, { "code": "7721-7/00" }, { "code": "7722-5/00" }, { "code": "7723-3/00" }, { "code": "7729-2/01" }, { "code": "7729-2/02" }, { "code": "7729-2/99" }, { "code": "7731-4/00" }, { "code": "7732-2/01" }, { "code": "7732-2/02" }, { "code": "7733-1/00" }, { "code": "7739-0/01" }, { "code": "7739-0/03" }, { "code": "7739-0/99" }, { "code": "7740-3/00" }, { "code": "7810-8/00" }, { "code": "7820-5/00" }, { "code": "7830-2/00" }, { "code": "7911-2/00" }, { "code": "7912-1/00" }, { "code": "7990-2/00" }, { "code": "8011-1/01" }, { "code": "8011-1/02" }, { "code": "8012-9/00" }, { "code": "8020-0/01" }, { "code": "8020-0/02" }, { "code": "8030-7/00" }, { "code": "8111-7/00" }, { "code": "8112-5/00" }, { "code": "8121-4/00" }, { "code": "8130-3/00" }, { "code": "8211-3/00" }, { "code": "8219-9/01" }, { "code": "8219-9/99" }, { "code": "8220-2/00" }, { "code": "8230-0/01" }, { "code": "8291-1/00" }, { "code": "8299-7/01" }, { "code": "8299-7/02" }, { "code": "8299-7/03" }, { "code": "8299-7/04" }, { "code": "8299-7/05" }, { "code": "8299-7/06" }, { "code": "8299-7/07" }, { "code": "8299-7/99" }, { "code": "8411-6/00" }, { "code": "8412-4/00" }, { "code": "8413-2/00" }, { "code": "8421-3/00" }, { "code": "8422-1/00" }, { "code": "8424-8/00" }, { "code": "8425-6/00" }, { "code": "8430-2/00" }, { "code": "8550-3/01" }, { "code": "8550-3/02" }, { "code": "8592-9/01" }, { "code": "8592-9/02" }, { "code": "8592-9/03" }, { "code": "8592-9/99" }, { "code": "8593-7/00" }, { "code": "8599-6/01" }, { "code": "8599-6/02" }, { "code": "8599-6/03" }, { "code": "8599-6/04" }, { "code": "8599-6/05" }, { "code": "8660-7/00" }, { "code": "9001-9/01" }, { "code": "9001-9/02" }, { "code": "9001-9/03" }, { "code": "9001-9/06" }, { "code": "9001-9/99" }, { "code": "9002-7/01" }, { "code": "9002-7/02" }, { "code": "9003-5/00" }, { "code": "9101-5/00" }, { "code": "9102-3/01" }, { "code": "9102-3/02" }, { "code": "9200-3/01" }, { "code": "9200-3/02" }, { "code": "9200-3/99" }, { "code": "9311-5/00" }, { "code": "9319-1/01" }, { "code": "9319-1/99" }, { "code": "9329-8/04" }, { "code": "9411-1/00" }, { "code": "9412-0/01" }, { "code": "9412-0/99" }, { "code": "9420-1/00" }, { "code": "9430-8/00" }, { "code": "9491-0/00" }, { "code": "9492-8/00" }, { "code": "9493-6/00" }, { "code": "9499-5/00" }, { "code": "9511-8/00" }, { "code": "9512-6/00" }, { "code": "9521-5/00" }, { "code": "9529-1/01" }, { "code": "9529-1/02" }, { "code": "9529-1/03" }, { "code": "9529-1/04" }, { "code": "9529-1/05" }, { "code": "9529-1/06" }, { "code": "9529-1/99" }, { "code": "9601-7/03" }, { "code": "9609-2/02" }, { "code": "9609-2/04" }, { "code": "9609-2/07" }, { "code": "9609-2/08" }, { "code": "9609-2/99" }, { "code": "9700-5/00" }, { "code": "9900-8/00" }
+            ]
+        },
+        "MEDIO": {
+            "message": "ATIVIDADES QUE RECEBEM LICENÇA DE FORMA SIMPLIFICADA, SEM INSPEÇÃO OU ANÁLISE DOCUMENTAL ANTES DE INICIAR. A FISCALIZAÇÃO PODE OCORRER DEPOIS.",
+            "cnaes": [
+                { "code": "1091-1/02" }, { "code": "3250-7/06" }, { "code": "3702-9/00" }, { "code": "3811-4/00" }, { "code": "3812-2/00" }, { "code": "3821-1/00" }, { "code": "3822-0/00" }, { "code": "4621-4/00" }, { "code": "4622-2/00" }, { "code": "4623-1/05" }, { "code": "4631-1/00" }, { "code": "4632-0/01" }, { "code": "4632-0/02" }, { "code": "4633-8/01" }, { "code": "4633-8/02" }, { "code": "4634-6/01" }, { "code": "4634-6/02" }, { "code": "4634-6/03" }, { "code": "4634-6/99" }, { "code": "4635-4/01" }, { "code": "4635-4/02" }, { "code": "4635-4/99" }, { "code": "4636-2/02" }, { "code": "4637-1/01" }, { "code": "4637-1/02" }, { "code": "4637-1/03" }, { "code": "4637-1/04" }, { "code": "4637-1/05" }, { "code": "4637-1/06" }, { "code": "4637-1/07" }, { "code": "4637-1/99" }, { "code": "4639-7/01" }, { "code": "4691-5/00" }, { "code": "4711-3/02" }, { "code": "4712-1/00" }, { "code": "4721-1/02" }, { "code": "4721-1/03" }, { "code": "4721-1/04" }, { "code": "4722-9/01" }, { "code": "4722-9/02" }, { "code": "4723-7/00" }, { "code": "4724-5/00" }, { "code": "4729-6/01" }, { "code": "4729-6/02" }, { "code": "4729-6/99" }, { "code": "4772-5/00" }, { "code": "4773-3/00" }, { "code": "4774-1/00" }, { "code": "4789-0/05" }, { "code": "5510-8/01" }, { "code": "5510-8/02" }, { "code": "5510-8/03" }, { "code": "5590-6/01" }, { "code": "5590-6/02" }, { "code": "5590-6/03" }, { "code": "5590-6/99" }, { "code": "5611-2/01" }, { "code": "5611-2/03" }, { "code": "5611-2/04" }, { "code": "5611-2/05" }, { "code": "5612-1/00" }, { "code": "5620-1/02" }, { "code": "5620-1/03" }, { "code": "5620-1/04" }, { "code": "7729-2/03" }, { "code": "7739-0/02" }, { "code": "8512-1/00" }, { "code": "8513-9/00" }, { "code": "8520-1/00" }, { "code": "8531-7/00" }, { "code": "8532-5/00" }, { "code": "8533-3/00" }, { "code": "8541-4/00" }, { "code": "8542-2/00" }, { "code": "8591-1/00" }, { "code": "8622-4/00" }, { "code": "8650-0/02" }, { "code": "8650-0/03" }, { "code": "8650-0/05" }, { "code": "8650-0/06" }, { "code": "8690-9/01" }, { "code": "8690-9/03" }, { "code": "8690-9/04" }, { "code": "8711-5/04" }, { "code": "8720-4/01" }, { "code": "8730-1/02" }, { "code": "8800-6/00" }, { "code": "9312-3/00" }, { "code": "9313-1/00" }, { "code": "9321-2/00" }, { "code": "9602-5/01" }, { "code": "9603-3/01" }, { "code": "9603-3/02" }, { "code": "9603-3/03" }, { "code": "9603-3/04" }, { "code": "9603-3/99" }, { "code": "9609-2/05" }
+            ]
+        },
+        "ALTO": {
+            "message": "ATIVIDADES QUE SÓ PODEM FUNCIONAR APÓS INSPEÇÃO SANITÁRIA E ANÁLISE DOCUMENTAL PRÉVIA. EXIGEM FISCALIZAÇÃO ANTES DA ABERTURA E NAS RENOVAÇÕES.",
+            "cnaes": [
+                { "code": "0892-4/03", "requiresPba": true }, { "code": "1032-5/01" }, { "code": "1041-4/00" }, { "code": "1042-2/00" }, { "code": "1053-8/00" }, { "code": "1061-9/02" }, { "code": "1062-7/00" }, { "code": "1065-1/02" }, { "code": "1065-1/03" }, { "code": "1072-4/01" }, { "code": "1081-3/02" }, { "code": "1082-1/00" }, { "code": "1091-1/01" }, { "code": "1099-6/02" }, { "code": "1099-6/03" }, { "code": "1099-6/06" }, { "code": "1099-6/07" }, { "code": "1099-6/99" }, { "code": "1121-6/00" }, { "code": "1122-4/04" }, { "code": "1122-4/99" }, { "code": "1742-7/01", "requiresPba": true }, { "code": "1742-7/02", "requiresPba": true }, { "code": "2052-5/00", "requiresPba": true }, { "code": "2061-4/00", "requiresPba": true }, { "code": "2062-2/00", "requiresPba": true }, { "code": "2063-1/00", "requiresPba": true }, { "code": "2110-6/00", "requiresPba": true }, { "code": "2121-1/01", "requiresPba": true }, { "code": "2121-1/02", "requiresPba": true }, { "code": "2121-1/03", "requiresPba": true }, { "code": "2123-8/00", "requiresPba": true }, { "code": "2660-4/00", "requiresPba": true }, { "code": "3250-7/01", "requiresPba": true }, { "code": "3250-7/02", "requiresPba": true }, { "code": "3250-7/03", "requiresPba": true }, { "code": "3250-7/04", "requiresPba": true }, { "code": "3250-7/05", "requiresPba": true }, { "code": "3250-7/09" }, { "code": "3600-6/02" }, { "code": "4639-7/02" }, { "code": "4644-3/01" }, { "code": "4645-1/01" }, { "code": "4645-1/02" }, { "code": "4645-1/03" }, { "code": "4646-0/01" }, { "code": "4646-0/02" }, { "code": "4649-4/08" }, { "code": "4649-4/09" }, { "code": "4771-7/01" }, { "code": "4771-7/02", "requiresPba": true }, { "code": "4771-7/03", "requiresPba": true }, { "code": "5620-1/01" }, { "code": "8122-2/00", "requiresPba": true }, { "code": "8511-2/00", "requiresPba": true }, { "code": "8610-1/01", "requiresPba": true }, { "code": "8610-1/02", "requiresPba": true }, { "code": "8621-6/01", "requiresPba": true }, { "code": "8621-6/02", "requiresPba": true }, { "code": "8630-5/01", "requiresPba": true }, { "code": "8630-5/02", "requiresPba": true }, { "code": "8630-5/04", "requiresPba": true }, { "code": "8630-5/06", "requiresPba": true }, { "code": "8630-5/07", "requiresPba": true }, { "code": "8640-2/01", "requiresPba": true }, { "code": "8640-2/02", "requiresPba": true }, { "code": "8640-2/03", "requiresPba": true }, { "code": "8640-2/04", "requiresPba": true }, { "code": "8640-2/05", "requiresPba": true }, { "code": "8640-2/06", "requiresPba": true }, { "code": "8640-2/07", "requiresPba": true }, { "code": "8640-2/08", "requiresPba": true }, { "code": "8640-2/09", "requiresPba": true }, { "code": "8640-2/10", "requiresPba": true }, { "code": "8640-2/11", "requiresPba": true }, { "code": "8640-2/12", "requiresPba": true }, { "code": "8640-2/13", "requiresPba": true }, { "code": "8640-2/14", "requiresPba": true }, { "code": "8640-2/99", "requiresPba": true }, { "code": "8650-0/07", "requiresPba": true }, { "code": "8690-9/02", "requiresPba": true }, { "code": "8711-5/01", "requiresPba": true }, { "code": "8711-5/02", "requiresPba": true }, { "code": "8711-5/03", "requiresPba": true }, { "code": "8712-3/00", "requiresPba": true }, { "code": "8720-4/99", "requiresPba": true }, { "code": "8730-1/01" }, { "code": "8730-1/99" }, { "code": "9603-3/05" }, { "code": "9609-2/06" }
+            ]
+        },
+        "CONDICIONADO": {
+            "message": "ATIVIDADES CUJA CLASSIFICAÇÃO DEPENDE DO TIPO DE PRODUTO, INSUMO OU SERVIÇO REALIZADO. O RISCO É DEFINIDO APÓS RESPONDER A CRITÉRIOS ESPECÍFICOS ESTABELECIDOS PELA NORMA.",
+            "cnaes": [
+                { "code": "1031-7/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1032-5/99", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1043-1/00", "question": "O PRODUTO FABRICADO SERÁ COMESTÍVEL?", "outcomes": { "Sim": "MEDIO", "Não": "BAIXO" } },
+                { "code": "1061-9/01", "question": "O BENEFICIAMENTO DO PRODUTO SERÁ INDUSTRIAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1063-5/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1064-3/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1065-1/01", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1069-4/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1071-6/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1072-4/02", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1081-3/01", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1092-9/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1093-7/01", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1093-7/02", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1094-5/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1095-3/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1096-1/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1099-6/04", "question": "O GELO FABRICADO SERÁ PARA CONSUMO HUMANO OU ENTRARÁ EM CONTATO COM ALIMENTOS E BEBIDAS?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "1099-6/05", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1122-4/03", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE ECONÔMICA SERÁ DIFERENTE DE PRODUTO ARTESANAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "1731-1/00", "question": "O PRODUTO SE DESTINA A ENTRAR EM CONTATO COM ALIMENTO OU SERÁ USADO PARA EMBALAR PRODUTO A SER ESTERILIZADO?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "1732-0/00", "question": "O PRODUTO SE DESTINA A ENTRAR EM CONTATO COM ALIMENTO OU PRODUTO PARA SAÚDE?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "1733-8/00", "question": "O PRODUTO SE DESTINA A ENTRAR EM CONTATO COM ALIMENTO OU PRODUTO PARA SAÚDE?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "2014-2/00", "question": "O GÁS FABRICADO SERÁ USADO PARA FIM TERAPÊUTICO?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "2019-3/99", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE SERÁ PRODUTO DE USO OU APLICAÇÃO AS ADITIVO DE ALIMENTOS?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "2029-1/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE SERÁ PRODUTO DE USO OU APLICAÇÃO AS ADITIVO DE ALIMENTOS?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "2071-1/00", "question": "UTILIZA PRECURSORES SUJEITOS A CONTROLE ESPECIAL NO PROCESSO DE SÍNTESE QUÍMICA?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "2091-6/00", "question": "UTILIZA PRECURSORES SUJEITOS A CONTROLE ESPECIAL NO PROCESSO DE SÍNTESE QUÍMICA OU CONTATO COM ALIMENTOS?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "2093-2/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE SERÁ ADITIVO ALIMENTAR OU INSUMO FARMACÊUTICO?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "2099-1/99", "question": "HAVERÁ FABRICAÇÃO DE CERA ODONTOLÓGICA UTILIZADA COMO PRODUTO PARA SAÚDE?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "2219-6/00", "question": "HAVERÁ FABRICAÇÃO DE PRODUTOS PARA SAÚDE OU EMBALAGENS PARA ALIMENTOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "2222-6/00", "question": "HAVERÁ FABRICAÇÃO DE PRODUTO PARA SAÚDE OU EMBALAGEM PLÁSTICA PARA ALIMENTOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "2312-5/00", "question": "HAVERÁ A FABRICAÇÃO DE EMBALAGENS DE VIDRO QUE ENTRAM EM CONTATO COM ALIMENTO?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "2341-9/00", "question": "HAVERÁ A FABRICAÇÃO DE PRODUTOS UTILIZADOS COMO EMBALAGEM QUE ENTRAM EM CONTATO COM ALIMENTO?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "2349-4/99", "question": "HAVERÁ A FABRICAÇÃO DE PRODUTOS UTILIZADOS COMO EMBALAGEM QUE ENTRAM EM CONTATO COM ALIMENTO?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "2591-8/00", "question": "HAVERÁ A FABRICAÇÃO DE EMBALAGENS METÁLICAS QUE ENTRAM EM CONTATO COM ALIMENTO?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "2829-1/99", "question": "HAVERÁ FABRICAÇÃO DE PRODUTO PARA SAÚDE?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "3092-0/00", "question": "HAVERÁ FABRICAÇÃO DE PRODUTO PARA SAÚDE?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "3104-7/00", "question": "HAVERÁ FABRICAÇÃO DE PRODUTO PARA SAÚDE?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "3250-7/07", "question": "HAVERÁ FABRICAÇÃO DE PRODUTO PARA SAÚDE?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "3291-4/00", "question": "HAVERÁ NO EXERCÍCIO A FABRICAÇÃO DE ESCOVA DENTAL?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "3292-2/02", "question": "HAVERÁ FABRICAÇÃO DE ARTEFATOS DE TECIDO NÃO TECIDO PARA USO ODONTO-MÉDICO-HOSPITALAR?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "3299-0/06", "question": "HAVERÁ FABRICAÇÃO DE VELAS, SEBO OU ESTEARINA PARA COSMÉTICO OU SANEANTE?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "4623-1/99", "question": "HAVERÁ O COMÉRCIO ATACADISTA DE ERVAS MEDICINAIS?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "4632-0/03", "question": "HAVERÁ FRACIONAMENTO, ACONDICIONAMENTO OU ROTULAGEM COMO ETAPAS DO PROCESSO PRODUTIVO?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "4635-4/03", "question": "HAVERÁ ENGARRAFAMENTO OU ROTULAGEM DE ÁGUA MINERAL?", "outcomes": { "Sim": "ALTO", "Não": "MEDIO" } },
+                { "code": "4664-8/00", "question": "O RESULTADO DO EXERCÍCIO DA ATIVIDADE COMPREENDERÁ A COMERCIALIZAÇÃO DE PRODUTOS PARA A SAÚDE?", "outcomes": { "Sim": "ALTO", "Não": "BAIXO" } },
+                { "code": "4930-2/01", "question": "TRANSPORTE/ARMAZENAMENTO DE PERECÍVEIS, MEDICAMENTOS, COSMÉTICOS OU MATERIAIS BIOLÓGICOS?", "outcomes": { "Sim": "ALTO", "Não": { "question": "TRANSPORTE/ARMAZENAMENTO DE ALIMENTOS NÃO PERECÍVEIS?", "outcomes": { "Sim": "MEDIO", "Não": "BAIXO" } } } },
+                { "code": "4930-2/02", "question": "TRANSPORTE/ARMAZENAMENTO DE PERECÍVEIS, MEDICAMENTOS, COSMÉTICOS OU MATERIAIS BIOLÓGICOS?", "outcomes": { "Sim": "ALTO", "Não": { "question": "TRANSPORTE/ARMAZENAMENTO DE ALIMENTOS NÃO PERECÍVEIS?", "outcomes": { "Sim": "MEDIO", "Não": "BAIXO" } } } },
+                { "code": "5120-0/00", "question": "TRANSPORTE/ARMAZENAMENTO DE PERECÍVEIS, MEDICAMENTOS, COSMÉTICOS OU MATERIAIS BIOLÓGICOS?", "outcomes": { "Sim": "ALTO", "Não": { "question": "TRANSPORTE/ARMAZENAMENTO DE ALIMENTOS NÃO PERECÍVEIS?", "outcomes": { "Sim": "MEDIO", "Não": "BAIXO" } } } },
+                { "code": "5211-7/01", "question": "ARMAZENAMENTO DE PERECÍVEIS, MEDICAMENTOS, COSMÉTICOS OU MATERIAIS BIOLÓGICOS?", "outcomes": { "Sim": "ALTO", "Não": { "question": "ARMAZENAMENTO DE ALIMENTOS NÃO PERECÍVEIS?", "outcomes": { "Sim": "MEDIO", "Não": "BAIXO" } } } },
+                { "code": "5211-7/99", "question": "ARMAZENAMENTO DE PERECÍVEIS, MEDICAMENTOS, COSMÉTICOS OU MATERIAIS BIOLÓGICOS?", "outcomes": { "Sim": "ALTO", "Não": { "question": "ARMAZENAMENTO DE ALIMENTOS NÃO PERECÍVEIS?", "outcomes": { "Sim": "MEDIO", "Não": "BAIXO" } } } },
+                { "code": "6203-1/00", "question": "DESENVOLVIMENTO DE SOFTWARES PARA DIAGNÓSTICO, MONITORAMENTO OU TERAPIA?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "7120-1/00", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A ANÁLISE DE PRODUTO SUJEITO À VIGILÂNCIA SANITÁRIA?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "7500-1/00", "question": "HAVERÁ COMERCIALIZAÇÃO/USO DE MEDICAMENTOS CONTROLADOS OU RADIAÇÃO IONIZANTE?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "8129-0/00", "question": "HAVERÁ ESTERILIZAÇÃO, REPROCESSAMENTO DE PRODUTOS DE SAÚDE OU IRRADIAÇÃO DE ALIMENTOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "8423-0/00", "question": "PRESTAÇÃO DE SERVIÇOS EM PENITENCIÁRIAS OU REABILITAÇÃO?", "outcomes": { "Sim": { "question": "REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS OU ODONTOLÓGICOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } }, "Não": "BAIXO" } },
+                { "code": "8292-0/00", "question": "HAVERÁ ENVASE OU FRACIONAMENTO DE ALIMENTOS, MEDICAMENTOS OU COSMÉTICOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "8599-6/99", "question": "HAVERÁ ENSINO DE CULINÁRIA OU ESTÉTICA?", "outcomes": { "Sim": { "question": "ENVOLVE PROCEDIMENTOS INVASIVOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } }, "Não": "BAIXO" } },
+                { "code": "8630-5/03", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } },
+                { "code": "8630-5/99", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } },
+                { "code": "8650-0/01", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } },
+                { "code": "8650-0/04", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } },
+                { "code": "8650-0/99", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } },
+                { "code": "8690-9/99", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } },
+                { "code": "8711-5/05", "question": "FORNECIMENTO DE ALIMENTAÇÃO, ASSISTÊNCIA DIÁRIA OU ENFERMAGEM?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "BAIXO" } },
+                { "code": "9601-7/01", "question": "PROCESSA ROUPA HOSPITALAR DE FORMA AUTÔNOMA?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } },
+                { "code": "9601-7/02", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE O PROCESSAMENTO DE ROUPA HOSPITALAR?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } },
+                { "code": "9601-7/03", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE O PROCESSAMENTO DE ROUPA HOSPITALAR?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } },
+                { "code": "9602-5/02", "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?", "outcomes": { "Sim": { "risk": "ALTO", "requiresPba": true }, "Não": "MEDIO" } }
+            ]
+        }
+    }
+}
+-e 
+
+--- src/lib/utils.ts ---
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}-e 
+
+--- src/lib/risk-analysis.test.ts ---
+
+import { analyzeCnaes } from './risk-analysis';
+import type { Cnae } from '../app/actions';
+
+// Mock do cnae-risk.json para isolar os testes
+jest.mock('./cnae-risk.json', () => ({
+  "risks": {
+    "ALTO": {
+      "message": "ALTO RISCO",
+      "cnaes": [{ "code": "1011-2/01", "description": "Frigorífico - abate de bovinos" }]
+    },
+    "MEDIO": {
+      "message": "MÉDIO RISCO",
+      "cnaes": []
+    },
+    "BAIXO": {
+      "message": "BAIXO RISCO",
+      "cnaes": [{ "code": "0111-3/01", "description": "Cultivo de arroz" }]
+    },
+    "CONDICIONADO": {
+      "cnaes": [
+        {
+          "code": "4711-3/01",
+          "description": "Comércio varejista de mercadorias em geral, com predominância de produtos alimentícios - hipermercados",
+          "question": "A edificação possui área construída acima de 900m²?",
+          "outcomes": {
+            "Sim": "ALTO",
+            "Não": "MEDIO"
+          }
+        }
+      ]
+    }
+  }
+}), { virtual: true });
+
+describe('analyzeCnaes', () => {
+  it('should return "NÃO ENCONTRADO" for an empty CNAE list', () => {
+    const result = analyzeCnaes([]);
+    expect(result.overallRisk).toBe('NÃO ENCONTRADO');
+    expect(result.message).toBe('Análise concluída.');
+  });
+
+  it('should return "BAIXO" for a single CNAE with low risk', () => {
+    const cnaes: Cnae[] = [{ code: '0111-3/01', description: 'Cultivo de arroz' }];
+    const result = analyzeCnaes(cnaes);
+    expect(result.overallRisk).toBe('BAIXO');
+  });
+
+  it('should return "ALTO" when at least one CNAE has high risk', () => {
+    const cnaes: Cnae[] = [
+      { code: '0111-3/01', description: 'Cultivo de arroz' }, // BAIXO
+      { code: '1011-2/01', description: 'Frigorífico - abate de bovinos' }, // ALTO
+    ];
+    const result = analyzeCnaes(cnaes);
+    expect(result.overallRisk).toBe('ALTO');
+  });
+
+  it('should return "CONDICIONADO" for a conditional CNAE without answers', () => {
+    const cnaes: Cnae[] = [{ code: '4711-3/01', description: 'Hipermercado' }];
+    const result = analyzeCnaes(cnaes);
+    expect(result.overallRisk).toBe('CONDICIONADO');
+    expect(result.unresolvedCnaes).toHaveLength(1);
+    expect(result.unresolvedCnaes[0].question).toBe('A edificação possui área construída acima de 900m²?');
+  });
+
+  it('should resolve a conditional CNAE to "MEDIO" with the correct answer', () => {
+    const cnaes: Cnae[] = [{ code: '4711-3/01', description: 'Hipermercado' }];
+    const answers = { '4711-3/01': 'Não' };
+    const result = analyzeCnaes(cnaes, answers);
+    expect(result.overallRisk).toBe('MEDIO');
+    expect(result.unresolvedCnaes).toHaveLength(0);
+  });
+
+    it('should resolve a conditional CNAE to "ALTO" with the correct answer', () => {
+    const cnaes: Cnae[] = [{ code: '4711-3/01', description: 'Hipermercado' }];
+    const answers = { '4711-3/01': 'Sim' };
+    const result = analyzeCnaes(cnaes, answers);
+    expect(result.overallRisk).toBe('ALTO');
+    expect(result.unresolvedCnaes).toHaveLength(0);
+  });
+});
+-e 
+
+--- src/lib/placeholder-images.json ---
+{
+  "placeholderImages": []
+}-e 
+

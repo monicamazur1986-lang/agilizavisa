@@ -1,0 +1,5 @@
+/** 
+ * @fileOverview ARQUIVO DESATIVADO PARA EVITAR CONFLITOS DE COMPILAÇÃO NO APP HOSTING.
+ * O SISTEMA UTILIZA EXCLUSIVAMENTE tailwind.config.js PARA O ROLLOUT DE PRODUÇÃO.
+ */
+export default { content: [] };

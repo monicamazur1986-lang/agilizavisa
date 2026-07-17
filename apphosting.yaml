@@ -1,0 +1,10 @@
+schemaVersion: v1alpha1
+run:
+  concurrency: 80
+  cpu: 1
+  memory: 1024Mi
+env:
+  - variable: NEXT_TELEMETRY_DISABLED
+    value: "1"
+  - variable: NODE_ENV
+    value: "production"

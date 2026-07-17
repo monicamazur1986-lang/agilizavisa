@@ -1,0 +1,5 @@
+{
+  "name": "AgilizaVISA - Consulta de Risco Sanitário",
+  "description": "Consulte a classificação de risco sanitário e acesse manuais e materiais educativos da Vigilância Sanitária de Prudentópolis - PR.",
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
