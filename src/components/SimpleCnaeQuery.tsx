@@ -108,7 +108,8 @@ export function SimpleCnaeQuery() {
                 <p className="text-[12px] text-muted-foreground text-center leading-relaxed">
                   {result.risk === 'BAIXO' && "Dispensa licenciamento sanitário"}
                   {result.risk === 'MEDIO' && "Licenciamento simplificado (Nível II)"}
-                  {result.risk === 'ALTO' && "Exige inspeção e projeto prévio (Nível III)"}
+                  {result.risk === 'ALTO' && result.requiresPba && "Exige inspeção sanitária e Projeto Básico de Arquitetura (PBA) (Nível III)"}
+                  {result.risk === 'ALTO' && !result.requiresPba && "Exige inspeção sanitária prévia (Nível III)"}
                 </p>
               </div>
 
@@ -216,6 +217,20 @@ export function SimpleCnaeQuery() {
               </div>
             )}
 
+            {result.baixoRiscoNote && (
+              <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 border border-border rounded-full shrink-0">
+                    <HelpCircle className="w-4 h-4 text-primary" strokeWidth={1.75} />
+                  </div>
+                  <div className="space-y-1 flex-1">
+                    <p className="eyebrow text-muted-foreground">Nota sobre Baixo Risco (Decreto Estadual nº 10.590/2025)</p>
+                    <p className="text-sm text-foreground/90 leading-snug">{result.baixoRiscoNote}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-center">
               <Button
                 onClick={reset}
@@ -253,7 +268,7 @@ export function SimpleCnaeQuery() {
             </p>
             <div className="flex justify-center mt-7">
               <a
-                href="https://conselho.saude.pr.gov.br/sites/ces/arquivos_restritos/files/migrados/File/Demonstracao_porte_municipios_pr.pdf"
+                href="/porte-dos-municipios.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 bg-primary px-7 py-3.5 rounded-md text-[11px] font-semibold text-primary-foreground uppercase tracking-[0.15em] hover:bg-primary/90 transition-colors shadow-refined"

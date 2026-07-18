@@ -527,6 +527,26 @@ export default function Home() {
                     </div>
                   )}
 
+                  {result?.baixoRiscoNotes && result.baixoRiscoNotes.length > 0 && (
+                    <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-4">
+                      <div className="flex items-start gap-4">
+                        <div className="p-2 border border-border rounded-full shrink-0">
+                          <HelpCircle className="w-4 h-4 text-primary" strokeWidth={1.75} />
+                        </div>
+                        <div className="space-y-2 flex-1">
+                          <p className="eyebrow text-muted-foreground">Nota sobre Baixo Risco (Decreto Estadual nº 10.590/2025)</p>
+                          <ul className="space-y-1.5">
+                            {result.baixoRiscoNotes.map((note, i) => (
+                              <li key={i} className="text-sm text-foreground/90 leading-snug flex gap-2">
+                                <span className="text-primary">•</span> {note}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-6">
                     <div className="flex items-center gap-4">
                        <h4 className="eyebrow whitespace-nowrap text-muted-foreground">Detalhamento CNAE</h4>

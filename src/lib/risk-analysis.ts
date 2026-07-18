@@ -15,7 +15,7 @@ function normalizeCnae(code: string): string {
   return String(code).replace(/\D/g, '').padStart(7, '0');
 }
 
-function getPorteInfo(code: string): { porte: string; porteNote?: string } {
+function getPorteInfo(code: string, answer?: string): { porte: string; porteNote?: string } {
   const normalized = normalizeCnae(code);
   const exceptions: Record<string, string> = {
     "2099199": "Porte III",
@@ -86,9 +86,9 @@ function getPorteInfo(code: string): { porte: string; porteNote?: string } {
     "8621602": "Porte II e III",
     "8630501": "Porte II e III",
     "8640202": "Porte II e III",
-    "8640205": "Porte III",
+    "8640205": "Porte II e III",
     "8640213": "Porte II e III",
-    "8640299": "Porte III",
+    "8640299": "Porte II e III",
     "8711501": "Porte II e III",
     "8711502": "Porte II e III",
     "1032599": "Porte II e III",
@@ -190,11 +190,28 @@ function getPorteInfo(code: string): { porte: string; porteNote?: string } {
     "9601703": "Se não houver processamento de roupa hospitalar, qualquer porte municipal é responsável; havendo processamento de roupa hospitalar: apenas Porte II e III."
   };
 
-  return { porte: exceptions[normalized] || "Porte I, II e III", porteNote: porteNotes[normalized] };
+  // Códigos cujo Porte de Fiscalização depende da MESMA pergunta Sim/Não usada para classificar o
+  // risco (ex.: 8292-0/00 — se a resposta for "Não", trata-se de fracionamento de alimento, e a
+  // fiscalização volta a ser de qualquer porte municipal; se "Sim", aplica-se a restrição acima).
+  // Sem essa correção, o porte ficava travado no valor mais restritivo mesmo quando a resposta
+  // já esclarecia se a circunstância restritiva realmente se aplica.
+  const conditionalPorteCodes = new Set([
+    "1032599", "1043100", "1072402", "1122403", "1731100", "1732000", "1733800",
+    "2014200", "2019399", "2029100", "2071100", "2091600", "2093200", "2219600",
+    "2222600", "2312500", "2341900", "2349499", "2591800", "2829199", "3092000",
+    "3104700", "3250707", "3291400", "3292202", "3299006", "4623199", "4635403",
+    "4664800", "4930201", "4930202", "5211701", "5211799", "6203100", "7120100",
+    "8129000", "8292000", "8423000", "9601701", "9601702", "9601703"
+  ]);
+
+  const basePorte = exceptions[normalized] || "Porte I, II e III";
+  const porte = (conditionalPorteCodes.has(normalized) && answer === 'Não') ? "Porte I, II e III" : basePorte;
+
+  return { porte, porteNote: porteNotes[normalized] };
 }
 
-function getPorteForCnae(code: string): string {
-  return getPorteInfo(code).porte;
+function getPorteForCnae(code: string, answer?: string): string {
+  return getPorteInfo(code, answer).porte;
 }
 
 export function resolveCnaeRisk(code: string, answers: Record<string, string>): {
@@ -206,15 +223,35 @@ export function resolveCnaeRisk(code: string, answers: Record<string, string>): 
   specialProjectNote?: string;
   porte?: string;
   porteNote?: string;
+  baixoRiscoNote?: string;
 } {
   if (!riskData || !riskData.risks) return { risk: 'NÃO ENCONTRADO' };
 
   const normalizedSearchCode = normalizeCnae(code);
-  // BAIXO é verificado primeiro: o Decreto Estadual nº 10.590/2025 é norma posterior e mais específica,
-  // que ampliou o rol de Baixo Risco e prevalece sobre o enquadramento da Resolução SESA nº 1034/2020
-  // para os CNAEs que passaram a constar em seu Anexo Único.
-  const levels: RiskLevel[] = ['BAIXO', 'ALTO', 'CONDICIONADO', 'MEDIO'];
-  const { porte, porteNote } = getPorteInfo(code);
+  const { porte, porteNote } = getPorteInfo(code, answers[normalizedSearchCode]);
+
+  const findIn = (level: RiskLevel) => {
+    const list = riskData.risks[level]?.cnaes;
+    if (!Array.isArray(list)) return undefined;
+    return list.find((c: any) => normalizeCnae(c.code) === normalizedSearchCode);
+  };
+
+  // O Decreto Estadual nº 10.590/2025 é norma posterior e mais específica, que ampliou o rol de
+  // Baixo Risco e prevalece sobre o enquadramento da Resolução SESA nº 1034/2020 (ALTO/CONDICIONADO/MEDIO).
+  // Porém, quando a entrada de Baixo Risco é CONDICIONAL (tem "note", isto é, só vale em certa
+  // circunstância) e o mesmo CNAE também consta na 1034, não podemos simplesmente prevalecer o Baixo:
+  // isso ignoraria os casos em que a condição do Decreto 10.590 não se aplica (ex.: 8292-0/00 só é
+  // Baixo Risco se for fracionamento de alimentos; se for medicamento, continua sendo Alto Risco com PBA,
+  // conforme a pergunta já existente no Condicionado). Nesses casos, deixamos a classificação da 1034
+  // prevalecer normalmente, e apenas anexamos a nota do Decreto 10.590 como informação complementar.
+  const baixoFound = findIn('BAIXO');
+  const existsInResolucao1034 = !!(findIn('ALTO') || findIn('CONDICIONADO') || findIn('MEDIO'));
+  const baixoIsConditionalConflict = !!(baixoFound && baixoFound.note && existsInResolucao1034);
+  const baixoRiscoNote: string | undefined = baixoFound?.note;
+
+  const levels: RiskLevel[] = baixoIsConditionalConflict
+    ? ['ALTO', 'CONDICIONADO', 'MEDIO']
+    : ['BAIXO', 'ALTO', 'CONDICIONADO', 'MEDIO'];
 
   for (const level of levels) {
     const cnaesList = riskData.risks[level]?.cnaes;
@@ -229,7 +266,8 @@ export function resolveCnaeRisk(code: string, answers: Record<string, string>): 
           requiresPba: !!found.requiresPba,
           pbaNote: found.pbaNote,
           porte,
-          porteNote
+          porteNote,
+          baixoRiscoNote
         };
       }
 
@@ -237,10 +275,10 @@ export function resolveCnaeRisk(code: string, answers: Record<string, string>): 
       let path = normalizedSearchCode;
       while (node && node.question) {
         const ans = answers[path];
-        if (!ans) return { risk: 'CONDICIONADO', question: node.question, path, porte, porteNote };
+        if (!ans) return { risk: 'CONDICIONADO', question: node.question, path, porte, porteNote, baixoRiscoNote };
 
         const outcome = node.outcomes?.[ans];
-        if (!outcome) return { risk: 'NÃO ENCONTRADO', porte, porteNote };
+        if (!outcome) return { risk: 'NÃO ENCONTRADO', porte, porteNote, baixoRiscoNote };
 
         if (typeof outcome === 'object' && outcome.risk) {
           return {
@@ -249,12 +287,13 @@ export function resolveCnaeRisk(code: string, answers: Record<string, string>): 
             pbaNote: outcome.pbaNote,
             specialProjectNote: outcome.specialProjectNote,
             porte,
-            porteNote
+            porteNote,
+            baixoRiscoNote
           };
         }
 
         if (typeof outcome === 'string') {
-          return { risk: outcome as RiskLevel, requiresPba: false, porte, porteNote };
+          return { risk: outcome as RiskLevel, requiresPba: false, porte, porteNote, baixoRiscoNote };
         }
 
         node = outcome;
@@ -262,7 +301,7 @@ export function resolveCnaeRisk(code: string, answers: Record<string, string>): 
       }
     }
   }
-  return { risk: 'NÃO ENCONTRADO', porte, porteNote };
+  return { risk: 'NÃO ENCONTRADO', porte, porteNote, baixoRiscoNote };
 }
 
 export function analyzeRisk(cnaes: Cnae[], answers: Record<string, string>): RiskAnalysisResult {
@@ -272,6 +311,7 @@ export function analyzeRisk(cnaes: Cnae[], answers: Record<string, string>): Ris
   const pbaNotes: string[] = [];
   const specialProjectNotes: string[] = [];
   const porteNotes: string[] = [];
+  const baixoRiscoNotes: string[] = [];
 
   const priority: Record<string, number> = { 'ALTO': 4, 'CONDICIONADO': 3, 'MEDIO': 2, 'BAIXO': 1, 'NÃO ENCONTRADO': 0 };
 
@@ -283,7 +323,8 @@ export function analyzeRisk(cnaes: Cnae[], answers: Record<string, string>): Ris
       requiresPba: false,
       pbaNotes: [],
       specialProjectNotes: [],
-      porteNotes: []
+      porteNotes: [],
+      baixoRiscoNotes: []
     };
   }
 
@@ -296,6 +337,9 @@ export function analyzeRisk(cnaes: Cnae[], answers: Record<string, string>): Ris
     }
     if (res.specialProjectNote && !specialProjectNotes.includes(res.specialProjectNote)) {
       specialProjectNotes.push(res.specialProjectNote);
+    }
+    if (res.baixoRiscoNote && !baixoRiscoNotes.includes(res.baixoRiscoNote)) {
+      baixoRiscoNotes.push(res.baixoRiscoNote);
     }
     if (res.porteNote && !porteNotes.includes(res.porteNote)) {
       porteNotes.push(res.porteNote);
@@ -318,7 +362,7 @@ export function analyzeRisk(cnaes: Cnae[], answers: Record<string, string>): Ris
 
   // Determinar porte global (mais restritivo)
   let globalPorte = "Porte I, II e III";
-  const portes = cnaes.map(c => getPorteForCnae(c.code));
+  const portes = cnaes.map(c => getPorteForCnae(c.code, answers[normalizeCnae(c.code)]));
   if (portes.some(p => p === "Porte III")) {
     globalPorte = "Porte III";
   } else if (portes.some(p => p === "Porte II e III") && globalPorte === "Porte I, II e III") {
@@ -333,6 +377,7 @@ export function analyzeRisk(cnaes: Cnae[], answers: Record<string, string>): Ris
     pbaNotes,
     specialProjectNotes,
     porte: globalPorte,
-    porteNotes
+    porteNotes,
+    baixoRiscoNotes
   };
 }

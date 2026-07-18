@@ -8,3 +8,6 @@ scripts
 .env
 .env.local
 .firebase
+
+.vercel
+.env*

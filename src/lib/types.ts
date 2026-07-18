@@ -27,4 +27,5 @@ export interface RiskAnalysisResult {
   specialProjectNotes: string[];
   porte?: string;
   porteNotes: string[];
+  baixoRiscoNotes: string[];
 }
