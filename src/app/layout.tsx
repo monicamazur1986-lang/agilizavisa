@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Manrope } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
-import { HeaderBanner } from '@/components/HeaderBanner';
-
-const inter = Inter({ subsets: ['latin'] });
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
   title: 'AgilizaVISA – Paraná',
@@ -23,9 +21,8 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="https://picsum.photos/seed/1/32/32" />
       </head>
-      <body className={inter.className}>
+      <body className={`${manrope.variable} font-sans`}>
         <FirebaseClientProvider>
-          <HeaderBanner />
           {children}
           <Toaster />
         </FirebaseClientProvider>

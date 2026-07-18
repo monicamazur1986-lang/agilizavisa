@@ -4,72 +4,164 @@
 
 @layer base {
   :root {
-    /* PALETA CLARA INDUSTRIAL - RIGOR E CLAREZA */
-    --background: 210 20% 98%;
-    --foreground: 222.2 84% 4.9%;
+    /* PALETA AGILIZA — AZUL CORPORATIVO, TECNOLÓGICO E CLARO */
+    --background: 212 28% 97%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
+
     --primary: 231 48% 48%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 33 100% 63%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+
+    --secondary: 212 30% 95%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 212 25% 94%;
+    --muted-foreground: 215 16% 42%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 231 48% 48%;
-    --radius: 1.25rem;
+
+    --border: 214 32% 89%;
+    --input: 214 32% 87%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.625rem;
+
+    /* Riscos — coloridos e nítidos */
+    --risk-baixo: 152 55% 32%;
+    --risk-medio: 32 90% 45%;
+    --risk-alto: 0 72% 51%;
+    --risk-condicionado: 217 91% 55%;
   }
 }
 
-/* RIGOR TÉCNICO: PROIBIÇÃO DE ITÁLICO */
 * {
   font-style: normal !important;
 }
 
-.circuit-bg {
-  background-color: #1a0b2e;
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.2) 0%, transparent 20%),
-    radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.2) 0%, transparent 20%),
-    linear-gradient(45deg, rgba(30, 27, 75, 0.3) 25%, transparent 25%, transparent 75%, rgba(30, 27, 75, 0.3) 75%, rgba(30, 27, 75, 0.3)),
-    linear-gradient(45deg, rgba(30, 27, 75, 0.3) 25%, transparent 25%, transparent 75%, rgba(30, 27, 75, 0.3) 75%, rgba(30, 27, 75, 0.3));
-  background-size: 60px 60px;
-  background-position: 0 0, 0 0, 0 0, 30px 30px;
+html {
+  scroll-behavior: smooth;
 }
 
-/* RELATÓRIO TÉCNICO: ESTILO TERMINAL DE DADOS - PESO 800 PARA MÁXIMA AUTORIDADE */
+body {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- TIPOGRAFIA DE DESTAQUE (COMERCIAL) ---------- */
+.font-display {
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+/* ---------- FUNDO TECNOLÓGICO CLARO ---------- */
+.tech-bg-light {
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(circle at 10% 8%, hsl(var(--accent) / 0.16) 0%, transparent 34%),
+    radial-gradient(circle at 90% 4%, hsl(var(--primary) / 0.14) 0%, transparent 30%),
+    radial-gradient(circle at 96% 92%, hsl(var(--accent) / 0.14) 0%, transparent 32%),
+    radial-gradient(circle at 2% 88%, hsl(var(--primary) / 0.12) 0%, transparent 30%);
+}
+
+/* ---------- FILETES / DIVISORES ---------- */
+.rule-hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--border)) 15%, hsl(var(--border)) 85%, transparent);
+}
+
+.rule-double {
+  border-top: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  height: 4px;
+}
+
+/* ---------- SOMBRAS SÓBRIAS ---------- */
+.shadow-refined {
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04), 0 8px 24px -12px hsl(var(--foreground) / 0.18);
+}
+.shadow-refined-lg {
+  box-shadow: 0 2px 4px hsl(var(--foreground) / 0.04), 0 24px 48px -20px hsl(var(--foreground) / 0.22);
+}
+
+/* ---------- RELATÓRIO TÉCNICO ---------- */
 .relatorio-tecnico {
   text-align: justify !important;
-  font-weight: 800 !important;
-  line-height: 1.6;
-  letter-spacing: 0.025em;
+  font-weight: 500 !important;
+  line-height: 1.75;
+  letter-spacing: 0.01em;
 }
 
 .error-text-technical {
-  color: #ffffff !important;
-  font-weight: 900 !important;
-  text-align: center !important;
-  text-transform: uppercase !important;
-  font-size: 1rem;
+  color: hsl(var(--destructive-foreground)) !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
   width: 100%;
   display: block;
 }
 
-body {
-  color: #1e293b;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
+/* ---------- NUMERAÇÃO DE ITENS (CNAE) ---------- */
+.numbered-list {
+  counter-reset: item;
+}
+.numbered-item {
+  counter-increment: item;
+  position: relative;
+}
+.numbered-item::before {
+  content: counter(item, decimal-leading-zero);
+  font-family: var(--font-sans), sans-serif;
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: hsl(var(--accent));
+  letter-spacing: 0.05em;
+  flex: 0 0 auto;
+  width: 1.75rem;
+  padding-top: 0.125rem;
 }
 
 .text-fluid-title {
-  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-size: clamp(2.25rem, 7vw, 4.25rem);
 }
 
 .text-fluid-subtitle {
-  font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+  font-size: clamp(0.8125rem, 2vw, 0.9375rem);
+}
+
+/* ---------- LÂMPADA PISCANDO SUAVEMENTE ---------- */
+@keyframes bulb-flicker {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 0 transparent); }
+  50% { opacity: 0.82; filter: drop-shadow(0 0 7px hsl(var(--accent) / 0.55)); }
+}
+.bulb-flicker {
+  animation: bulb-flicker 3.4s ease-in-out infinite;
+}
+
+/* ---------- FOCO REFINADO ---------- */
+::selection {
+  background: hsl(var(--accent) / 0.25);
+  color: hsl(var(--foreground));
+}
+
+@media print {
+  .no-print { display: none !important; }
 }

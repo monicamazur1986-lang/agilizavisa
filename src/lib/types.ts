@@ -23,5 +23,8 @@ export interface RiskAnalysisResult {
   message: string;
   unresolved: any[];
   requiresPba: boolean;
+  pbaNotes: string[];
+  specialProjectNotes: string[];
   porte?: string;
+  porteNotes: string[];
 }

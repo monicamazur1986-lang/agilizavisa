@@ -11,27 +11,33 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 
 const PORTE_THEMES: Record<string, { text: string; bg: string; border: string; icon: any; label: string; }> = {
-  'Porte III': { 
-    text: 'text-red-700', 
-    bg: 'bg-red-50', 
-    border: 'border-red-200',
+  'Porte III': {
+    text: 'text-risk-alto',
+    bg: 'bg-risk-alto/10',
+    border: 'border-risk-alto/25',
     icon: AlertTriangle,
     label: 'Alta Complexidade'
   },
-  'Porte II e III': { 
-    text: 'text-amber-700', 
-    bg: 'bg-amber-50', 
-    border: 'border-amber-200',
+  'Porte II e III': {
+    text: 'text-risk-medio',
+    bg: 'bg-risk-medio/10',
+    border: 'border-risk-medio/25',
     icon: AlertCircle,
     label: 'Média Complexidade'
   },
-  'Porte I, II e III': { 
-    text: 'text-emerald-700', 
-    bg: 'bg-emerald-50', 
-    border: 'border-emerald-200',
+  'Porte I, II e III': {
+    text: 'text-risk-baixo',
+    bg: 'bg-risk-baixo/10',
+    border: 'border-risk-baixo/25',
     icon: CheckCircle2,
     label: ''
   }
+};
+
+const RISK_BG: Record<string, { text: string; bg: string; }> = {
+  'BAIXO': { text: 'text-risk-baixo', bg: 'bg-risk-baixo/10' },
+  'MEDIO': { text: 'text-risk-medio', bg: 'bg-risk-medio/10' },
+  'ALTO': { text: 'text-risk-alto', bg: 'bg-risk-alto/10' },
 };
 
 export function SimpleCnaeQuery() {
@@ -56,16 +62,14 @@ export function SimpleCnaeQuery() {
   };
 
   return (
-    <Card className="p-8 md:p-12 bg-[#fffdf0] border border-amber-100 rounded-[3rem] shadow-2xl overflow-hidden relative mt-12">
-      <div className="space-y-8">
+    <Card className="p-8 md:p-14 bg-card border border-border rounded-md shadow-refined overflow-hidden relative mt-14">
+      <div className="space-y-9">
         <div className="text-center space-y-2">
-          <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight flex items-center justify-center gap-3">
-            <Search className="w-6 h-6 text-blue-600" />
+          <p className="eyebrow text-muted-foreground">Antes de abrir sua empresa</p>
+          <h3 className="font-display text-2xl md:text-3xl text-foreground flex items-center justify-center gap-3">
+            <Search className="w-5 h-5 text-accent" strokeWidth={1.75} />
             Consulta Prévia por CNAE
           </h3>
-          <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">
-            Descubra o risco e o porte antes de abrir sua empresa
-          </p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
@@ -77,53 +81,53 @@ export function SimpleCnaeQuery() {
               value={query}
               onChange={(e) => setQuery(e.target.value.replace(/\D/g, ''))}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="h-16 text-xl md:text-2xl text-center border-2 border-slate-200 bg-white rounded-2xl font-mono font-black text-blue-700 focus:bg-white focus:border-blue-500 transition-all placeholder:text-slate-200 shadow-inner"
+              className="h-14 text-lg md:text-xl text-center border border-input bg-background rounded-md font-mono font-medium text-primary shadow-inner placeholder:text-muted-foreground/30"
             />
           </div>
           <Button
             onClick={handleSearch}
-            className="h-16 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg transition-all active:scale-95 shadow-lg shadow-blue-500/20 w-full md:w-auto"
+            className="h-14 px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md text-sm font-semibold uppercase tracking-[0.15em] transition-all shadow-refined w-full md:w-auto"
           >
             Consultar
           </Button>
         </div>
 
         {result && result.risk !== 'NÃO ENCONTRADO' && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 md:grid-cols-2 border border-border rounded-md divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
+              <div className={`${RISK_BG[result.risk]?.bg || 'bg-card'} p-6 space-y-4`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Grau de Risco</span>
-                  <HelpCircle className="w-4 h-4 text-slate-300" />
+                  <span className={`eyebrow ${RISK_BG[result.risk]?.text || 'text-muted-foreground'}`}>Grau de Risco</span>
+                  <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/50" />
                 </div>
                 <div className="text-center py-2">
-                  <p className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-800">
+                  <p className={`font-display text-2xl md:text-3xl tracking-tight ${RISK_BG[result.risk]?.text || 'text-foreground'}`}>
                     {result.risk}
                   </p>
                 </div>
-                <p className="text-[10px] text-slate-500 font-bold text-center leading-relaxed italic">
+                <p className="text-[12px] text-muted-foreground text-center leading-relaxed">
                   {result.risk === 'BAIXO' && "Dispensa licenciamento sanitário"}
-                  {result.risk === 'MEDIO' && "Licenciamento simplificado (Nível II)."}
-                  {result.risk === 'ALTO' && "Exige inspeção e projeto prévio (Nível III)."}
+                  {result.risk === 'MEDIO' && "Licenciamento simplificado (Nível II)"}
+                  {result.risk === 'ALTO' && "Exige inspeção e projeto prévio (Nível III)"}
                 </p>
               </div>
 
-              <div className={`p-6 rounded-3xl border shadow-sm space-y-4 ${PORTE_THEMES[result.porte]?.bg || 'bg-slate-50'} ${PORTE_THEMES[result.porte]?.border || 'border-slate-100'}`}>
+              <div className={`${PORTE_THEMES[result.porte]?.bg || 'bg-card'} p-6 space-y-4`}>
                 <div className="flex items-center justify-between">
-                  <span className={`text-[10px] font-black uppercase tracking-wider ${PORTE_THEMES[result.porte]?.text || 'text-slate-400'}`}>
+                  <span className={`eyebrow ${PORTE_THEMES[result.porte]?.text || 'text-muted-foreground'}`}>
                     Porte de Fiscalização
                   </span>
                   {(() => {
                     const ThemeIcon = PORTE_THEMES[result.porte]?.icon || CheckCircle2;
-                    return <ThemeIcon className={`w-4 h-4 ${PORTE_THEMES[result.porte]?.text || 'text-slate-300'}`} />;
+                    return <ThemeIcon className={`w-3.5 h-3.5 ${PORTE_THEMES[result.porte]?.text || 'text-muted-foreground/50'}`} strokeWidth={1.75} />;
                   })()}
                 </div>
                 <div className="text-center py-2">
-                  <p className={`text-2xl md:text-3xl font-black uppercase tracking-tighter ${PORTE_THEMES[result.porte]?.text || 'text-slate-800'}`}>
+                  <p className={`font-display text-2xl md:text-3xl tracking-tight ${PORTE_THEMES[result.porte]?.text || 'text-foreground'}`}>
                     {result.porte}
                   </p>
                   {PORTE_THEMES[result.porte]?.label && (
-                    <p className={`text-[10px] font-black uppercase tracking-widest mt-1 opacity-80 ${PORTE_THEMES[result.porte]?.text || 'text-slate-600'}`}>
+                    <p className={`text-[10px] font-medium uppercase tracking-wider mt-1 opacity-80 ${PORTE_THEMES[result.porte]?.text || 'text-muted-foreground'}`}>
                       {PORTE_THEMES[result.porte]?.label}
                     </p>
                   )}
@@ -132,41 +136,91 @@ export function SimpleCnaeQuery() {
             </div>
 
             {result.risk === 'CONDICIONADO' && result.path && (
-              <div className="p-8 bg-blue-50 border border-blue-100 rounded-3xl space-y-6">
+              <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="p-2 bg-white rounded-xl shadow-sm">
-                    <AlertCircle className="w-5 h-5 text-blue-600" />
+                  <div className="p-2 border border-border rounded-full shrink-0">
+                    <AlertCircle className="w-4 h-4 text-primary" strokeWidth={1.75} />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Questionário de Autodeclaração</p>
-                    <p className="text-sm md:text-base font-black text-blue-950 uppercase leading-tight">{result.question}</p>
+                    <p className="eyebrow text-muted-foreground">Questionário de Autodeclaração</p>
+                    <p className="text-sm md:text-base text-foreground/90 leading-snug">{result.question}</p>
                   </div>
                 </div>
-                <RadioGroup 
-                  value={answers[result.path] || ""} 
+                <RadioGroup
+                  value={answers[result.path] || ""}
                   onValueChange={(v) => {
                     const nextAnswers = { ...answers, [result.path!]: v };
                     setAnswers(nextAnswers);
                     handleSearch(nextAnswers);
-                  }} 
-                  className="flex gap-12"
+                  }}
+                  className="flex gap-6"
                 >
-                  <div className="flex items-center space-x-3 bg-white px-6 py-3 rounded-2xl border border-blue-200 shadow-sm cursor-pointer hover:border-blue-400 transition-all">
-                    <RadioGroupItem value="Sim" id="pre-sim" className="h-5 w-5 border-blue-600" />
-                    <Label htmlFor="pre-sim" className="font-black text-blue-900 text-sm cursor-pointer">SIM</Label>
+                  <div className="flex items-center space-x-3 bg-card px-6 py-3 rounded-md border border-border hover:border-accent transition-colors cursor-pointer">
+                    <RadioGroupItem value="Sim" id="pre-sim" className="h-4 w-4 border-primary" />
+                    <Label htmlFor="pre-sim" className="text-foreground text-sm cursor-pointer">Sim</Label>
                   </div>
-                  <div className="flex items-center space-x-3 bg-white px-6 py-3 rounded-2xl border border-blue-200 shadow-sm cursor-pointer hover:border-blue-400 transition-all">
-                    <RadioGroupItem value="Não" id="pre-nao" className="h-5 w-5 border-blue-600" />
-                    <Label htmlFor="pre-nao" className="font-black text-blue-900 text-sm cursor-pointer">NÃO</Label>
+                  <div className="flex items-center space-x-3 bg-card px-6 py-3 rounded-md border border-border hover:border-accent transition-colors cursor-pointer">
+                    <RadioGroupItem value="Não" id="pre-nao" className="h-4 w-4 border-primary" />
+                    <Label htmlFor="pre-nao" className="text-foreground text-sm cursor-pointer">Não</Label>
                   </div>
                 </RadioGroup>
               </div>
             )}
 
+            {result.requiresPba && (
+              <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 border border-border rounded-full shrink-0">
+                    <AlertTriangle className="w-4 h-4 text-destructive" strokeWidth={1.75} />
+                  </div>
+                  <div className="space-y-2 flex-1">
+                    <p className="eyebrow text-muted-foreground">Exigência de Projeto Básico de Arquitetura (PBA)</p>
+                    <p className="text-sm text-foreground/90 leading-snug">
+                      O Projeto Básico de Arquitetura (PBA), documento técnico que descreve a estrutura física do estabelecimento, deve ser <span className="font-semibold text-foreground">previamente aprovado pela Vigilância Sanitária</span> antes do início das operações e em cada renovação da licença (art. 9º da Resolução SESA nº 1.034/2020).
+                    </p>
+                    {result.pbaNote && (
+                      <p className="text-[13px] text-muted-foreground leading-relaxed flex gap-2">
+                        <span className="text-destructive shrink-0">•</span> {result.pbaNote}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {result.specialProjectNote && (
+              <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 border border-border rounded-full shrink-0">
+                    <AlertCircle className="w-4 h-4 text-primary" strokeWidth={1.75} />
+                  </div>
+                  <div className="space-y-1 flex-1">
+                    <p className="eyebrow text-muted-foreground">Exigência de Projeto Específico</p>
+                    <p className="text-sm text-foreground/90 leading-snug">{result.specialProjectNote}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {result.porteNote && (
+              <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-2">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 border border-border rounded-full shrink-0">
+                    <HelpCircle className="w-4 h-4 text-primary" strokeWidth={1.75} />
+                  </div>
+                  <div className="space-y-1 flex-1">
+                    <p className="eyebrow text-muted-foreground">Observação sobre o Porte de Fiscalização</p>
+                    <p className="text-sm text-foreground/90 leading-snug">{result.porteNote}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-center">
-              <Button 
-                onClick={reset} 
-                className="bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-2xl px-12 py-6 h-auto text-xs font-black uppercase tracking-widest transition-all"
+              <Button
+                onClick={reset}
+                variant="outline"
+                className="border-border text-muted-foreground hover:border-primary hover:text-primary rounded-md px-10 py-5 h-auto text-[11px] font-semibold uppercase tracking-[0.15em]"
               >
                 Nova Consulta
               </Button>
@@ -175,36 +229,36 @@ export function SimpleCnaeQuery() {
         )}
 
         {result && result.risk === 'NÃO ENCONTRADO' && (
-          <div className="p-8 bg-rose-50 border border-rose-100 rounded-3xl text-center space-y-4 animate-in shake-in duration-300">
-            <XCircle className="w-12 h-12 text-rose-500 mx-auto" />
+          <div className="p-8 border-l-2 border-destructive bg-destructive/[0.04] rounded-sm text-center space-y-4">
+            <XCircle className="w-8 h-8 text-destructive mx-auto" strokeWidth={1.5} />
             <div className="space-y-1">
-              <p className="text-rose-900 font-black text-lg uppercase">CNAE não localizado</p>
-              <p className="text-rose-600 font-bold text-xs uppercase tracking-tight">Verifique o código ou consulte a vigilância local.</p>
+              <p className="text-foreground font-display text-lg">CNAE não localizado</p>
+              <p className="text-muted-foreground text-[13px]">Verifique o código ou consulte a vigilância local.</p>
             </div>
-            <Button onClick={reset} variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-100 uppercase text-[10px] font-black">Tentar Novamente</Button>
+            <Button onClick={reset} variant="outline" className="border-border text-muted-foreground hover:border-primary hover:text-primary text-[11px] font-semibold uppercase tracking-wider">Tentar Novamente</Button>
           </div>
         )}
 
-        <div className="pt-10 border-t border-slate-100 space-y-6">
+        <div className="pt-10 space-y-6">
           <div className="flex items-center gap-4">
-             <div className="h-px bg-slate-200 w-full"></div>
-             <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] whitespace-nowrap">Nota Explicativa</span>
-             <div className="h-px bg-slate-200 w-full"></div>
+             <div className="rule-hairline flex-1"></div>
+             <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.3em] whitespace-nowrap">Nota Explicativa</span>
+             <div className="rule-hairline flex-1"></div>
           </div>
-          
-          <div className="bg-blue-50/50 p-8 md:p-12 rounded-[2.5rem] border border-blue-100 shadow-sm">
-            <p className="text-sm md:text-base font-medium text-slate-700 leading-relaxed text-center max-w-2xl mx-auto">
-              O porte de cada município (I, II ou III) pode variar de acordo com a sua capacidade técnica e administrativa. 
+
+          <div className="bg-secondary/40 p-8 md:p-12 rounded-md border border-border">
+            <p className="text-sm md:text-base text-foreground/80 leading-relaxed text-center max-w-2xl mx-auto">
+              O porte de cada município (I, II ou III) pode variar de acordo com a sua capacidade técnica e administrativa.
               Consulte a classificação do seu município no documento oficial abaixo:
             </p>
-            <div className="flex justify-center mt-8">
-              <a 
-                href="https://conselho.saude.pr.gov.br/sites/ces/arquivos_restritos/files/migrados/File/Demonstracao_porte_municipios_pr.pdf" 
-                target="_blank" 
+            <div className="flex justify-center mt-7">
+              <a
+                href="https://conselho.saude.pr.gov.br/sites/ces/arquivos_restritos/files/migrados/File/Demonstracao_porte_municipios_pr.pdf"
+                target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 bg-blue-600 px-8 py-4 rounded-full text-xs font-black text-white uppercase tracking-widest hover:bg-blue-700 hover:scale-105 transition-all shadow-xl shadow-blue-500/20"
+                className="inline-flex items-center gap-3 bg-primary px-7 py-3.5 rounded-md text-[11px] font-semibold text-primary-foreground uppercase tracking-[0.15em] hover:bg-primary/90 transition-colors shadow-refined"
               >
-                <HelpCircle className="w-4 h-4" />
+                <HelpCircle className="w-3.5 h-3.5" strokeWidth={1.75} />
                 Consultar Porte dos Municípios
               </a>
             </div>

@@ -9,7 +9,16 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
       colors: {
+        risk: {
+          baixo: "hsl(var(--risk-baixo))",
+          medio: "hsl(var(--risk-medio))",
+          alto: "hsl(var(--risk-alto))",
+          condicionado: "hsl(var(--risk-condicionado))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
