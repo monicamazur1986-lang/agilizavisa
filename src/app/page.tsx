@@ -453,6 +453,22 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {data.situacaoCadastral && data.situacaoCadastral !== 'ATIVA' && (
+                    <div className="p-7 bg-destructive/10 border border-destructive/30 rounded-md space-y-2">
+                      <div className="flex items-start gap-4">
+                        <div className="p-2 border border-destructive/40 rounded-full shrink-0">
+                          <AlertTriangle className="w-4 h-4 text-destructive" strokeWidth={1.75} />
+                        </div>
+                        <div className="space-y-1 flex-1">
+                          <p className="eyebrow text-destructive">CNPJ com situação cadastral: {data.situacaoCadastral}</p>
+                          <p className="text-sm text-foreground/90 leading-snug">
+                            Este CNPJ não consta como ATIVO na Receita Federal{data.motivoSituacaoCadastral && data.motivoSituacaoCadastral !== 'SEM MOTIVO' ? ` (motivo: ${data.motivoSituacaoCadastral})` : ''}. A classificação de risco abaixo é apenas referencial — este estabelecimento pode não estar apto a operar.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {result && (
                     <div className="relatorio-tecnico bg-secondary/60 p-6 md:p-10 rounded-md border border-border text-foreground/85 text-sm md:text-base">
                       {result.message.split(' ').map((word, i) =>

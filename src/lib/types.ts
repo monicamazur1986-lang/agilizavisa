@@ -14,6 +14,8 @@ export interface CompanyData {
   nome_fantasia: string;
   cnpj: string;
   cnaes: Cnae[];
+  situacaoCadastral?: string;
+  motivoSituacaoCadastral?: string;
 }
 
 export type RiskLevel = 'ALTO' | 'MEDIO' | 'BAIXO' | 'CONDICIONADO' | 'NÃO ENCONTRADO';

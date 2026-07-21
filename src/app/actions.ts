@@ -69,7 +69,9 @@ export async function fetchCnpjData(cnpj: string): Promise<FetchResult> {
         razao_social: String(data.razao_social || data.nome_fantasia || "NÃO INFORMADO").toUpperCase(),
         nome_fantasia: String(data.nome_fantasia || "").toUpperCase(),
         cnpj: String(data.cnpj || cleaned),
-        cnaes: cnaes
+        cnaes: cnaes,
+        situacaoCadastral: data.descricao_situacao_cadastral ? String(data.descricao_situacao_cadastral).toUpperCase() : undefined,
+        motivoSituacaoCadastral: data.descricao_motivo_situacao_cadastral ? String(data.descricao_motivo_situacao_cadastral).toUpperCase() : undefined
       }
     };
   } catch (error: any) {

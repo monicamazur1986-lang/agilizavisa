@@ -85,7 +85,7 @@ export function SimpleCnaeQuery() {
             />
           </div>
           <Button
-            onClick={handleSearch}
+            onClick={() => handleSearch()}
             className="h-14 px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md text-sm font-semibold uppercase tracking-[0.15em] transition-all shadow-refined w-full md:w-auto"
           >
             Consultar
