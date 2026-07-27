@@ -21,7 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { MaterialsList } from '@/components/MaterialsList';
 import { SimpleCnaeQuery } from '@/components/SimpleCnaeQuery';
 import { useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import type { CompanyData, RiskAnalysisResult } from '@/lib/types';
 
 const schema = z.object({
@@ -314,23 +314,10 @@ export default function Home() {
 
     startTransition(async () => {
       try {
-        if (db) {
-          const docRef = doc(db, 'companies', cleanedCnpj);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const cached = docSnap.data() as CompanyData;
-            if (cached && Array.isArray(cached.cnaes) && cached.cnaes.length > 0) {
-              setData(cached);
-              return;
-            }
-          }
-        }
-
         const res = await fetchCnpjData(values.cnpj);
         if (res && res.success) {
           setData(res.data);
           if (db) {
-            setDoc(doc(db, 'companies', cleanedCnpj), { ...res.data, updatedAt: serverTimestamp() }).catch(console.error);
             addDoc(collection(db, 'queries'), {
               cnpj: cleanedCnpj,
               timestamp: serverTimestamp(),
