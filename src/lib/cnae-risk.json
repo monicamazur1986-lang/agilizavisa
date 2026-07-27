@@ -3498,10 +3498,12 @@
           "note": "Desde que não haja tratamento químico superficial."
         },
         {
-          "code": "9601-7/01"
+          "code": "9601-7/01",
+          "note": "Desde que não haja processamento de roupa hospitalar e/ou atividades enquadradas como de apoio a serviço de saúde, conforme Resolução SESA nº 750/2026."
         },
         {
-          "code": "9601-7/03"
+          "code": "9601-7/03",
+          "note": "Desde que não haja processamento de roupa hospitalar e/ou atividades enquadradas como de apoio a serviço de saúde, conforme Resolução SESA nº 750/2026."
         },
         {
           "code": "9609-2/02"
@@ -3534,9 +3536,6 @@
         },
         {
           "code": "3250-7/06"
-        },
-        {
-          "code": "3702-9/00"
         },
         {
           "code": "3811-4/00"
@@ -3740,21 +3739,6 @@
           "code": "8520-1/00"
         },
         {
-          "code": "8531-7/00"
-        },
-        {
-          "code": "8532-5/00"
-        },
-        {
-          "code": "8533-3/00"
-        },
-        {
-          "code": "8541-4/00"
-        },
-        {
-          "code": "8542-2/00"
-        },
-        {
           "code": "8591-1/00"
         },
         {
@@ -3768,9 +3752,6 @@
         },
         {
           "code": "8650-0/05"
-        },
-        {
-          "code": "8650-0/06"
         },
         {
           "code": "8690-9/01"
@@ -3836,12 +3817,6 @@
           "code": "1032-5/01"
         },
         {
-          "code": "1041-4/00"
-        },
-        {
-          "code": "1042-2/00"
-        },
-        {
           "code": "1053-8/00"
         },
         {
@@ -3849,12 +3824,6 @@
         },
         {
           "code": "1062-7/00"
-        },
-        {
-          "code": "1065-1/02"
-        },
-        {
-          "code": "1065-1/03"
         },
         {
           "code": "1072-4/01"
@@ -4026,7 +3995,7 @@
         },
         {
           "code": "8621-6/01",
-          "requiresPba": true
+          "requiresPba": false
         },
         {
           "code": "8621-6/02",
@@ -4736,55 +4705,100 @@
           "code": "8630-5/03",
           "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?",
           "outcomes": {
+            "Não": "MEDIO",
             "Sim": {
-              "risk": "ALTO",
-              "requiresPba": true
-            },
-            "Não": "MEDIO"
+              "question": "NO LOCAL É REALIZADO PROCESSAMENTO DE DISPOSITIVOS MÉDICOS?",
+              "outcomes": {
+                "Não": {
+                  "risk": "ALTO",
+                  "requiresPba": false
+                },
+                "Sim": {
+                  "risk": "ALTO",
+                  "requiresPba": true
+                }
+              }
+            }
           }
         },
         {
           "code": "8630-5/99",
           "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?",
           "outcomes": {
+            "Não": "MEDIO",
             "Sim": {
-              "risk": "ALTO",
-              "requiresPba": true
-            },
-            "Não": "MEDIO"
+              "question": "NO LOCAL É REALIZADO PROCESSAMENTO DE DISPOSITIVOS MÉDICOS?",
+              "outcomes": {
+                "Não": {
+                  "risk": "ALTO",
+                  "requiresPba": false
+                },
+                "Sim": {
+                  "risk": "ALTO",
+                  "requiresPba": true
+                }
+              }
+            }
           }
         },
         {
           "code": "8650-0/01",
           "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?",
           "outcomes": {
+            "Não": "MEDIO",
             "Sim": {
-              "risk": "ALTO",
-              "requiresPba": true
-            },
-            "Não": "MEDIO"
+              "question": "NO LOCAL É REALIZADO PROCESSAMENTO DE DISPOSITIVOS MÉDICOS?",
+              "outcomes": {
+                "Não": {
+                  "risk": "ALTO",
+                  "requiresPba": false
+                },
+                "Sim": {
+                  "risk": "ALTO",
+                  "requiresPba": true
+                }
+              }
+            }
           }
         },
         {
           "code": "8650-0/04",
           "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?",
           "outcomes": {
+            "Não": "MEDIO",
             "Sim": {
-              "risk": "ALTO",
-              "requiresPba": true
-            },
-            "Não": "MEDIO"
+              "question": "NO LOCAL É REALIZADO PROCESSAMENTO DE DISPOSITIVOS MÉDICOS?",
+              "outcomes": {
+                "Não": {
+                  "risk": "ALTO",
+                  "requiresPba": false
+                },
+                "Sim": {
+                  "risk": "ALTO",
+                  "requiresPba": true
+                }
+              }
+            }
           }
         },
         {
           "code": "8650-0/99",
           "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?",
           "outcomes": {
+            "Não": "MEDIO",
             "Sim": {
-              "risk": "ALTO",
-              "requiresPba": true
-            },
-            "Não": "MEDIO"
+              "question": "NO LOCAL É REALIZADO PROCESSAMENTO DE DISPOSITIVOS MÉDICOS?",
+              "outcomes": {
+                "Não": {
+                  "risk": "ALTO",
+                  "requiresPba": false
+                },
+                "Sim": {
+                  "risk": "ALTO",
+                  "requiresPba": true
+                }
+              }
+            }
           }
         },
         {
@@ -4811,13 +4825,10 @@
         },
         {
           "code": "9601-7/01",
-          "question": "PROCESSA ROUPA HOSPITALAR DE FORMA AUTÔNOMA?",
+          "question": "HAVERÁ PROCESSAMENTO DE ROUPA HOSPITALAR E/OU ATIVIDADES ENQUADRADAS COMO DE APOIO A SERVIÇO DE SAÚDE?",
           "outcomes": {
-            "Sim": {
-              "risk": "ALTO",
-              "requiresPba": true
-            },
-            "Não": "MEDIO"
+            "Sim": "ALTO",
+            "Não": "BAIXO"
           }
         },
         {
@@ -4833,24 +4844,113 @@
         },
         {
           "code": "9601-7/03",
-          "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE O PROCESSAMENTO DE ROUPA HOSPITALAR?",
+          "question": "HAVERÁ PROCESSAMENTO DE ROUPA HOSPITALAR E/OU ATIVIDADES ENQUADRADAS COMO DE APOIO A SERVIÇO DE SAÚDE?",
           "outcomes": {
-            "Sim": {
-              "risk": "ALTO",
-              "requiresPba": true
-            },
-            "Não": "MEDIO"
+            "Sim": "ALTO",
+            "Não": "BAIXO"
           }
         },
         {
           "code": "9602-5/02",
           "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?",
           "outcomes": {
+            "Não": "MEDIO",
             "Sim": {
               "risk": "ALTO",
-              "requiresPba": true
-            },
+              "requiresPba": false
+            }
+          }
+        },
+        {
+          "code": "1041-4/00",
+          "question": "O PRODUTO FABRICADO SERÁ COMESTÍVEL?",
+          "outcomes": {
+            "Sim": "ALTO",
+            "Não": "BAIXO"
+          }
+        },
+        {
+          "code": "1042-2/00",
+          "question": "O PRODUTO FABRICADO SERÁ COMESTÍVEL?",
+          "outcomes": {
+            "Sim": "ALTO",
+            "Não": "BAIXO"
+          }
+        },
+        {
+          "code": "1065-1/02",
+          "question": "O PRODUTO FABRICADO SERÁ COMESTÍVEL?",
+          "outcomes": {
+            "Sim": "ALTO",
+            "Não": "BAIXO"
+          }
+        },
+        {
+          "code": "1065-1/03",
+          "question": "O PRODUTO FABRICADO SERÁ COMESTÍVEL?",
+          "outcomes": {
+            "Sim": "ALTO",
+            "Não": "BAIXO"
+          }
+        },
+        {
+          "code": "8531-7/00",
+          "question": "TRATA EXCLUSIVAMENTE DE ENSINO NA MODALIDADE À DISTÂNCIA?",
+          "outcomes": {
+            "Sim": "BAIXO",
             "Não": "MEDIO"
+          }
+        },
+        {
+          "code": "8532-5/00",
+          "question": "TRATA EXCLUSIVAMENTE DE ENSINO NA MODALIDADE À DISTÂNCIA?",
+          "outcomes": {
+            "Sim": "BAIXO",
+            "Não": "MEDIO"
+          }
+        },
+        {
+          "code": "8533-3/00",
+          "question": "TRATA EXCLUSIVAMENTE DE ENSINO NA MODALIDADE À DISTÂNCIA?",
+          "outcomes": {
+            "Sim": "BAIXO",
+            "Não": "MEDIO"
+          }
+        },
+        {
+          "code": "8541-4/00",
+          "question": "TRATA EXCLUSIVAMENTE DE ENSINO NA MODALIDADE À DISTÂNCIA?",
+          "outcomes": {
+            "Sim": "BAIXO",
+            "Não": "MEDIO"
+          }
+        },
+        {
+          "code": "8542-2/00",
+          "question": "TRATA EXCLUSIVAMENTE DE ENSINO NA MODALIDADE À DISTÂNCIA?",
+          "outcomes": {
+            "Sim": "BAIXO",
+            "Não": "MEDIO"
+          }
+        },
+        {
+          "code": "8650-0/06",
+          "question": "HAVERÁ NO EXERCÍCIO DA ATIVIDADE A REALIZAÇÃO DE PROCEDIMENTOS INVASIVOS?",
+          "outcomes": {
+            "Não": "MEDIO",
+            "Sim": {
+              "question": "NO LOCAL É REALIZADO PROCESSAMENTO DE DISPOSITIVOS MÉDICOS?",
+              "outcomes": {
+                "Não": {
+                  "risk": "ALTO",
+                  "requiresPba": false
+                },
+                "Sim": {
+                  "risk": "ALTO",
+                  "requiresPba": true
+                }
+              }
+            }
           }
         }
       ]
