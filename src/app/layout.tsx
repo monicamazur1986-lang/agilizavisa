@@ -3,6 +3,7 @@ import { Manrope } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { Analytics } from '@vercel/analytics/next';
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -26,6 +27,7 @@ export default function RootLayout({
           {children}
           <Toaster />
         </FirebaseClientProvider>
+        <Analytics />
       </body>
     </html>
   );
