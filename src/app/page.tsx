@@ -9,7 +9,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Search, RotateCcw, Loader2, ArrowRight, Megaphone, MessageCircle, Mail, FileText, AlertTriangle, AlertCircle, CheckCircle2, HelpCircle } from 'lucide-react';
+import { Search, RotateCcw, Loader2, ArrowRight, Megaphone, MessageCircle, FileText, AlertTriangle, AlertCircle, CheckCircle2, HelpCircle, ShieldCheck } from 'lucide-react';
 import { fetchCnpjData } from './actions';
 import { analyzeRisk, resolveCnaeRisk } from '@/lib/risk-analysis';
 import { RiskBadge, RiskIcon } from '@/components/risk-components';
@@ -115,6 +115,41 @@ const getPorteTheme = (porte?: string) => {
   return PORTE_THEMES[porte] || PORTE_THEMES['Porte I, II e III'];
 };
 
+/**
+ * Traduz o nível de risco sanitário na resposta objetiva que o empresário procura:
+ * precisa ou não da licença. O nível técnico (Nível I/II/III) continua exibido acima,
+ * mas sozinho ele não responde a pergunta prática.
+ */
+const VISA_VEREDITOS: Record<string, { headline: string; detail: string; icon: any }> = {
+  'BAIXO': {
+    headline: 'Dispensada de licença sanitária',
+    detail: 'O estabelecimento pode iniciar as operações sem licenciamento prévio, observadas as normas sanitárias vigentes.',
+    icon: CheckCircle2,
+  },
+  'MEDIO': {
+    headline: 'Exige licença sanitária',
+    detail: 'Emissão simplificada, sem inspeção prévia: as operações podem começar logo após o licenciamento.',
+    icon: AlertCircle,
+  },
+  'ALTO': {
+    headline: 'Exige licença sanitária',
+    detail: 'Com inspeção sanitária e/ou análise documental prévias ao início das atividades.',
+    icon: AlertTriangle,
+  },
+  'CONDICIONADO': {
+    headline: 'Depende das respostas abaixo',
+    detail: 'Responda ao questionário no detalhamento CNAE para definir a exigência.',
+    icon: HelpCircle,
+  },
+  'NÃO ENCONTRADO': {
+    headline: 'Consulte a Vigilância Sanitária municipal',
+    detail: 'Atividade não localizada no rol oficial: o enquadramento precisa ser individualizado.',
+    icon: HelpCircle,
+  },
+};
+
+const getVisaVeredito = (level?: string) => (level ? VISA_VEREDITOS[level] : undefined);
+
 function RiskClassificationMatrix() {
   return (
     <div className="mt-14 mb-20 px-4 space-y-10">
@@ -193,28 +228,16 @@ function ContactSection() {
       <div className="max-w-3xl mx-auto">
         <Card className="bg-card border border-border border-t-2 border-t-accent rounded-md p-10 md:p-14 shadow-refined space-y-10 text-center">
           <p className="eyebrow text-muted-foreground">Fale conosco</p>
-          <div className="flex flex-col md:flex-row justify-center items-center gap-10 md:gap-16">
-            <a href="https://wa.me/5542935059222" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group">
+          <div className="flex justify-center items-center">
+            <a href="https://wa.me/5542991038314" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group">
               <div className="w-11 h-11 border border-border rounded-full flex items-center justify-center text-risk-baixo group-hover:border-risk-baixo transition-colors shrink-0">
                 <MessageCircle className="w-5 h-5" strokeWidth={1.75} />
               </div>
               <div className="text-left">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] mb-1">WhatsApp</p>
-                <p className="font-medium text-foreground text-base md:text-lg whitespace-nowrap">(42) 93505 9222</p>
+                <p className="font-medium text-foreground text-base md:text-lg whitespace-nowrap">(42) 99103-8314</p>
               </div>
             </a>
-            <div className="hidden md:block w-px h-12 bg-border" />
-            <div className="flex items-center gap-4 group w-full md:w-auto">
-              <div className="w-11 h-11 border border-border rounded-full flex items-center justify-center text-primary group-hover:border-accent transition-colors shrink-0">
-                <Mail className="w-5 h-5" strokeWidth={1.75} />
-              </div>
-              <div className="text-left flex-1 min-w-0">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] mb-1">E-mail Institucional</p>
-                <a href="mailto:devisat@prudentopolis.pr.gov.br" className="font-medium text-foreground text-sm md:text-lg block break-all md:break-normal hover:text-accent transition-colors">
-                  devisat@prudentopolis.pr.gov.br
-                </a>
-              </div>
-            </div>
           </div>
         </Card>
       </div>
@@ -367,7 +390,7 @@ export default function Home() {
               </div>
             </div>
             <p className="text-fluid-subtitle text-muted-foreground max-w-xl mx-auto leading-relaxed px-4">
-              Consulte a classificação de risco sanitário de qualquer empresa no Paraná a partir do CNPJ.
+              Consulte a necessidade de licenciamento sanitário no Paraná e junto ao Corpo de Bombeiros (CBMPR) da sua empresa, direto pelo CNPJ.
             </p>
           </header>
         )}
@@ -463,12 +486,36 @@ export default function Home() {
 
                 <Card className={`overflow-hidden border border-border border-t-2 ${currentTheme.borderClass} bg-card rounded-md shadow-refined-lg`}>
                   <div className={`${currentTheme.bgTintClass} py-10 px-6 text-center border-b border-border`}>
-                    <p className={`eyebrow mb-3 ${currentTheme.textClass}`}>Vigilância Sanitária</p>
+                    <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 mb-5 rounded-full bg-card border ${currentTheme.borderSoftClass} shadow-refined`}>
+                      <ShieldCheck className={`w-[18px] h-[18px] ${currentTheme.textClass}`} strokeWidth={2} />
+                      <span className={`text-[13px] md:text-sm font-bold uppercase tracking-[0.16em] ${currentTheme.textClass}`}>
+                        Vigilância Sanitária
+                      </span>
+                    </div>
                     <h3 className={`font-display text-3xl md:text-4xl ${currentTheme.textClass} tracking-tight`}>
                       {result?.level === 'CONDICIONADO' ? 'Risco Condicionado' :
                        result?.level === 'NÃO ENCONTRADO' ? 'Atividade Não Localizada' :
                        currentTheme.label}
                     </h3>
+
+                    {/* Veredito objetivo, em paridade com o painel do Corpo de Bombeiros. */}
+                    {result && (() => {
+                      const v = getVisaVeredito(result.level);
+                      if (!v) return null;
+                      const VIcon = v.icon;
+                      return (
+                        <div className="mt-4 space-y-1.5">
+                          <div className="flex items-center justify-center gap-2.5">
+                            <VIcon className={`w-[18px] h-[18px] ${currentTheme.textClass} shrink-0`} strokeWidth={2} />
+                            <p className={`text-base md:text-lg font-semibold ${currentTheme.textClass} leading-snug`}>
+                              {v.headline}
+                            </p>
+                          </div>
+                          <p className="text-[13px] text-foreground/70 leading-snug max-w-sm mx-auto">{v.detail}</p>
+                        </div>
+                      );
+                    })()}
+
                     {result?.porte && (
                       <div className={`mt-6 inline-flex p-3 px-4 rounded-sm border items-center justify-center gap-2.5 ${getPorteTheme(result.porte).bg} ${getPorteTheme(result.porte).border}`}>
                         {(() => {

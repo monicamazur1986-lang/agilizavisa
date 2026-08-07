@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 /**
  * @fileOverview MOTOR DE ANÁLISE DO CORPO DE BOMBEIROS MILITAR DO PARANÁ.
@@ -48,6 +48,7 @@ function normalizeCnae(code: string): string {
 export const Q_MODO: BombeirosQuestion = {
   id: 'modo_exercicio',
   question: 'Como a atividade é exercida?',
+  shortLabel: 'Forma de exercício',
   help: 'Algumas formas de operação garantem a dispensa automática, independentemente do CNAE.',
   base: 'Art. 3º, I a VI',
   options: [
@@ -90,6 +91,7 @@ export const Q_MODO: BombeirosQuestion = {
 
 export const Q_AREA: BombeirosQuestion = {
   id: 'area',
+  shortLabel: 'Área e pavimento',
   question:
     'O estabelecimento ocupa até 50 m², numa edificação de até 200 m², exclusivamente térrea e fora de Patrimônio Histórico Cultural?',
   help: 'Subsolo destinado exclusivamente a estacionamento, sem abastecimento de veículos, pode ser desconsiderado.',
@@ -102,6 +104,7 @@ export const Q_AREA: BombeirosQuestion = {
 
 export const Q_SAIDA: BombeirosQuestion = {
   id: 'saida',
+  shortLabel: 'Saída para área externa',
   question:
     'O local possui saída direta para área externa, sem qualquer abertura para o interior de outros estabelecimentos ou edificações vizinhas?',
   base: 'Art. 3º, VII, "c"',
@@ -113,6 +116,7 @@ export const Q_SAIDA: BombeirosQuestion = {
 
 export const Q_LOTACAO: BombeirosQuestion = {
   id: 'lotacao',
+  shortLabel: 'Lotação máxima',
   question: 'Qual a lotação máxima do estabelecimento?',
   help: 'A forma de cômputo da lotação segue a normatização do CBMPR (art. 13).',
   base: 'Art. 3º, VII, "d" e art. 4º, II',
@@ -125,6 +129,7 @@ export const Q_LOTACAO: BombeirosQuestion = {
 
 export const Q_PUBLICO: BombeirosQuestion = {
   id: 'publico',
+  shortLabel: 'Público ou uso atendido',
   question: 'A atividade se destina a algum destes públicos ou usos?',
   help: 'Idosos, crianças ou pessoas com deficiência; hospitais e locais com pacientes que necessitem de cuidados especiais; teatros, cinemas, óperas, auditórios de estúdio de rádio e TV e assemelhados; casas de shows, casas noturnas e boates; clubes, restaurantes dançantes, bingo, bilhares, clubes de tiro, centros de eventos e boliches.',
   base: 'Art. 3º, VII, "e"',
@@ -136,6 +141,7 @@ export const Q_PUBLICO: BombeirosQuestion = {
 
 export const Q_GLP: BombeirosQuestion = {
   id: 'glp',
+  shortLabel: 'Quantidade de GLP',
   question: 'Utiliza mais de 39 kg de gás liquefeito de petróleo (GLP)?',
   help: 'O limite corresponde a três botijões P13. É vedado o uso de botijões de GLP no interior da edificação (art. 14).',
   base: 'Art. 3º, VII, "f"',
@@ -147,6 +153,7 @@ export const Q_GLP: BombeirosQuestion = {
 
 export const Q_INFLAMAVEIS: BombeirosQuestion = {
   id: 'inflamaveis',
+  shortLabel: 'Líquidos inflamáveis',
   question: 'Utiliza mais de 150 litros de líquidos inflamáveis e/ou combustíveis?',
   base: 'Art. 3º, VII, "g"',
   options: [
@@ -157,6 +164,7 @@ export const Q_INFLAMAVEIS: BombeirosQuestion = {
 
 export const Q_PERIGOSOS: BombeirosQuestion = {
   id: 'perigosos',
+  shortLabel: 'Produtos perigosos',
   question:
     'Utiliza, manipula, armazena ou comercializa produtos perigosos à saúde humana, ao meio ambiente ou ao patrimônio?',
   help: 'Explosivos, peróxidos orgânicos, substâncias oxidantes, tóxicas, radioativas, corrosivas e demais substâncias perigosas.',
@@ -316,7 +324,8 @@ export function analyzeBombeiros(
       procedure:
         'Baixo risco. A empresa está dispensada do licenciamento do CBMPR e também da implementação das medidas de prevenção e combate a incêndio e a desastres (art. 8º, caput).',
       reasons,
-      pendingQuestions: [],
+      // Mantém a pergunta para que a forma de operação declarada possa ser revista.
+      pendingQuestions: [Q_MODO],
       triagem,
       legalBasis: [FUNDAMENTO_BASE, 'Art. 3º, I a VI', 'Art. 8º'],
     };
@@ -336,7 +345,7 @@ export function analyzeBombeiros(
         `A atividade ${listados} consta do Anexo B da Portaria, que relaciona as atividades de alto risco.`,
         'Por constar do Anexo B, a atividade não pode ser enquadrada como de médio risco (art. 4º, I) nem como de baixo risco pelo art. 3º, VII, "a".',
       ],
-      pendingQuestions: [],
+      pendingQuestions: [Q_MODO],
       triagem,
       legalBasis: [FUNDAMENTO_BASE, 'Anexo B', 'Art. 5º', 'Art. 9º'],
     };
@@ -344,8 +353,11 @@ export function analyzeBombeiros(
 
   // ETAPA 3 — perguntas pertinentes conforme a triagem do CNAE.
   const questoes = allAnexoA ? QUESTOES_BAIXO_RISCO : QUESTOES_MEDIO_RISCO;
+  // Q_MODO permanece na lista exibida para poder ser revista, mas não entra em
+  // "faltantes": ela já foi respondida para a análise chegar até aqui.
+  const questoesExibidas = [Q_MODO, ...questoes];
   const faltantes = questoes.filter((q) => !respostas[q.id]);
-  if (faltantes.length > 0) return resultadoPendente(questoes, triagem);
+  if (faltantes.length > 0) return resultadoPendente(questoesExibidas, triagem);
 
   const lotacao = respostas[Q_LOTACAO.id];
   const perigosos = respostas[Q_PERIGOSOS.id];
@@ -380,20 +392,20 @@ export function analyzeBombeiros(
         reasons: [
           'A atividade consta do Anexo A e foram atendidas cumulativamente todas as oito condições do art. 3º, VII.',
         ],
-        pendingQuestions: questoes,
+        pendingQuestions: questoesExibidas,
         triagem,
         legalBasis: [FUNDAMENTO_BASE, 'Anexo A', 'Art. 3º, VII', 'Art. 8º, parágrafo único'],
       };
     }
 
-    return classificarMedioOuAlto(lotacao, perigosos, triagem, questoes, [
+    return classificarMedioOuAlto(lotacao, perigosos, triagem, questoesExibidas, [
       `Embora a atividade conste do Anexo A, o baixo risco foi afastado porque ${falhas.join('; ')}.`,
       'O art. 3º, VII exige o atendimento cumulativo de todas as alíneas "a" a "h" — o descumprimento de uma única delas já impede a dispensa.',
     ]);
   }
 
   // CNAE fora do Anexo A: o baixo risco do art. 3º, VII é inaplicável.
-  return classificarMedioOuAlto(lotacao, perigosos, triagem, questoes, [
+  return classificarMedioOuAlto(lotacao, perigosos, triagem, questoesExibidas, [
     'Nenhuma das atividades do CNPJ consta do Anexo A, o que afasta o enquadramento como baixo risco pelo art. 3º, VII, "a".',
   ]);
 }

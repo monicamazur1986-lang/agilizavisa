@@ -8,7 +8,8 @@
  * em seguida, o veredito definitivo obtido pelas respostas de autodeclaração.
  */
 
-import { Flame, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, ShieldAlert } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Flame, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, ShieldAlert, ClipboardCheck, Pencil } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { analyzeBombeiros } from '@/lib/bombeiros-analysis';
@@ -66,6 +67,24 @@ const ANEXO_STYLES: Record<string, { text: string; bg: string; border: string }>
   NENHUM: { text: 'text-muted-foreground', bg: 'bg-secondary', border: 'border-border' },
 };
 
+/**
+ * Agrupa as atividades por anexo. Com vários CNAEs no mesmo enquadramento, repetir o
+ * texto explicativo em cada linha inflava a coluna sem acrescentar informação — aqui ele
+ * aparece uma única vez por grupo. Os grupos saem na ordem de impacto sobre o resultado:
+ * Anexo B decide o alto risco, "não listado" impede o baixo, Anexo A é o permissivo.
+ */
+function agruparPorAnexo(triagem: BombeirosResult['triagem']) {
+  const ordem: Array<'B' | 'NENHUM' | 'A'> = ['B', 'NENHUM', 'A'];
+
+  return ordem
+    .map((chave) => {
+      const itens = triagem.filter((t) => (t.anexo ?? 'NENHUM') === chave);
+      if (itens.length === 0) return null;
+      return { chave, itens, label: itens[0].label, detail: itens[0].detail };
+    })
+    .filter((g): g is NonNullable<typeof g> => g !== null);
+}
+
 /** Rótulo grande e inequívoco do veredito — é a resposta que o usuário veio buscar. */
 function vereditoLabel(result: BombeirosResult): string {
   if (result.level === 'PENDENTE') return 'Depende das características do local';
@@ -86,13 +105,40 @@ export function BombeirosPanel({
   const theme = PANEL_THEMES[result.level] || PANEL_THEMES['NÃO APLICÁVEL'];
   const VereditoIcon = theme.icon;
 
+  const topoRef = useRef<HTMLDivElement>(null);
+  const [revisando, setRevisando] = useState(false);
+  // Pergunta reaberta para edição. Respondidas ficam recolhidas em uma linha, para que
+  // a tela dê lugar às que ainda faltam — o primeiro bloco, com sete opções, é o que
+  // mais ocupa espaço depois de respondido.
+  const [editando, setEditando] = useState<string | null>(null);
+
+  const totalPerguntas = result.pendingQuestions.length;
+  const respondidas = result.pendingQuestions.filter((q) => !!answers[q.id]).length;
+  // Concluído = havia questionário e a análise já chegou a um veredito definitivo.
+  const concluido = totalPerguntas > 0 && result.level !== 'PENDENTE';
+
+  // Ao fechar o questionário, devolve o usuário ao veredito no topo do painel —
+  // sem isso ele fica olhando para o espaço vazio deixado pelas perguntas ocultas.
+  useEffect(() => {
+    if (!concluido) return;
+    setRevisando(false);
+    topoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [concluido]);
+
+  const mostrarPerguntas = totalPerguntas > 0 && (!concluido || revisando);
+
   return (
-    <div className={`bg-card rounded-md border border-border border-t-2 ${theme.borderTop} overflow-hidden shadow-refined-lg`}>
+    <div
+      ref={topoRef}
+      className={`bg-card rounded-md border border-border border-t-2 ${theme.borderTop} overflow-hidden shadow-refined-lg scroll-mt-6`}
+    >
       {/* Cabeçalho — veredito */}
       <div className={`${theme.bg} px-6 md:px-10 py-10 text-center border-b border-border space-y-4`}>
-        <div className="flex items-center justify-center gap-2.5">
-          <Flame className={`w-4 h-4 ${theme.text}`} strokeWidth={1.75} />
-          <p className={`eyebrow ${theme.text}`}>Corpo de Bombeiros Militar do Paraná</p>
+        <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-card border ${theme.border} shadow-refined`}>
+          <Flame className={`w-[18px] h-[18px] ${theme.text}`} strokeWidth={2} />
+          <span className={`text-[13px] md:text-sm font-bold uppercase tracking-[0.16em] ${theme.text}`}>
+            Corpo de Bombeiros
+          </span>
         </div>
 
         <h3 className={`font-display text-3xl md:text-4xl ${theme.text} tracking-tight`}>
@@ -135,26 +181,33 @@ export function BombeirosPanel({
               <div className="rule-hairline flex-1" />
             </div>
             <div className="divide-y divide-border border-t border-border">
-              {result.triagem.map((item, idx) => {
-                const style = ANEXO_STYLES[item.anexo ?? 'NENHUM'];
+              {agruparPorAnexo(result.triagem).map((grupo) => {
+                const style = ANEXO_STYLES[grupo.chave];
                 return (
-                  <div key={`${item.code}-${idx}`} className="py-5 space-y-2.5">
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
-                      <div className="space-y-2 flex-1">
-                        <code className="text-[11px] font-medium text-primary bg-secondary px-2.5 py-1 rounded-sm">
-                          {item.code}
-                        </code>
-                        <p className="text-sm text-foreground/90 leading-snug">{item.description}</p>
-                      </div>
-                      <div className="shrink-0">
-                        <span
-                          className={`inline-block px-3 py-1.5 rounded-sm border text-[10px] font-medium uppercase tracking-wider ${style.text} ${style.bg} ${style.border}`}
-                        >
-                          {item.label}
-                        </span>
-                      </div>
+                  <div key={grupo.chave} className="py-4 space-y-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <span
+                        className={`inline-block px-3 py-1.5 rounded-sm border text-[10px] font-medium uppercase tracking-wider ${style.text} ${style.bg} ${style.border}`}
+                      >
+                        {grupo.label}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">
+                        {grupo.itens.length} {grupo.itens.length === 1 ? 'atividade' : 'atividades'}
+                      </span>
                     </div>
-                    <p className="text-[13px] text-muted-foreground leading-relaxed">{item.detail}</p>
+
+                    <ul className="space-y-1.5">
+                      {grupo.itens.map((item, idx) => (
+                        <li key={`${item.code}-${idx}`} className="flex items-baseline gap-2.5">
+                          <code className="text-[11px] font-medium text-primary shrink-0">{item.code}</code>
+                          <span className="text-[13px] text-foreground/85 leading-snug">
+                            {item.description}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <p className="text-[12px] text-muted-foreground leading-relaxed">{grupo.detail}</p>
                   </div>
                 );
               })}
@@ -162,14 +215,42 @@ export function BombeirosPanel({
           </div>
         )}
 
+        {/* Questionário concluído — perguntas recolhidas, com opção de revisar. */}
+        {concluido && !revisando && (
+          <div className="p-6 rounded-md border border-risk-baixo/25 bg-risk-baixo/10 space-y-4">
+            <div className="flex items-start gap-4">
+              <div className="p-2 border border-risk-baixo/30 rounded-full shrink-0">
+                <ClipboardCheck className="w-4 h-4 text-risk-baixo" strokeWidth={1.75} />
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <p className="eyebrow text-risk-baixo">Questionário respondido</p>
+                <p className="text-sm text-foreground/90 leading-snug">
+                  As {totalPerguntas} perguntas sobre o estabelecimento foram respondidas. O
+                  resultado acima já considera as suas declarações.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRevisando(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 px-5 rounded-sm border border-border bg-card text-[11px] uppercase tracking-[0.12em] text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Revisar respostas
+            </button>
+          </div>
+        )}
+
         {/* Autodeclaração */}
-        {result.pendingQuestions.length > 0 && (
+        {mostrarPerguntas && (
           <div className="space-y-5">
             <div className="flex items-center gap-4">
               <h4 className="eyebrow whitespace-nowrap text-muted-foreground">
                 Características do estabelecimento
               </h4>
               <div className="rule-hairline flex-1" />
+              <span className="eyebrow text-muted-foreground whitespace-nowrap shrink-0">
+                {respondidas} de {totalPerguntas}
+              </span>
             </div>
 
             <p className="text-[13px] text-muted-foreground leading-relaxed">
@@ -177,15 +258,44 @@ export function BombeirosPanel({
               veracidade pode ser verificada a qualquer tempo pelo CBMPR (art. 16).
             </p>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {result.pendingQuestions.map((q) => {
                 const respondida = !!answers[q.id];
+                const recolhida = respondida && editando !== q.id;
+
+                if (recolhida) {
+                  const escolhida = q.options.find((o) => o.value === answers[q.id]);
+                  return (
+                    <div
+                      key={q.id}
+                      className="flex items-start justify-between gap-3 p-4 rounded-sm border border-border bg-secondary/30"
+                    >
+                      <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                        <CheckCircle2 className="w-4 h-4 text-risk-baixo shrink-0 mt-0.5" strokeWidth={2} />
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {q.shortLabel}
+                          </p>
+                          <p className="text-[13px] text-foreground/90 leading-snug">
+                            {escolhida?.label ?? answers[q.id]}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditando(q.id)}
+                        className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors underline underline-offset-4"
+                      >
+                        Alterar
+                      </button>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={q.id}
-                    className={`p-6 rounded-sm border space-y-4 transition-colors ${
-                      respondida ? 'bg-secondary/40 border-border' : 'bg-secondary/60 border-primary/25'
-                    }`}
+                    className="p-6 rounded-sm border border-primary/25 bg-secondary/60 space-y-4"
                   >
                     <div className="space-y-1.5">
                       <div className="flex items-start justify-between gap-4">
@@ -203,7 +313,10 @@ export function BombeirosPanel({
 
                     <RadioGroup
                       value={answers[q.id] || ''}
-                      onValueChange={(v) => onAnswer(q.id, v)}
+                      onValueChange={(v) => {
+                        onAnswer(q.id, v);
+                        setEditando(null); // recolhe assim que a resposta é dada
+                      }}
                       className="space-y-2.5"
                     >
                       {q.options.map((opt) => (
@@ -231,6 +344,20 @@ export function BombeirosPanel({
                 );
               })}
             </div>
+
+            {/* Só aparece na revisão: fecha o questionário e volta ao veredito. */}
+            {concluido && revisando && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRevisando(false);
+                  topoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 h-11 px-5 rounded-sm border border-primary/40 bg-primary/5 text-[11px] uppercase tracking-[0.12em] text-primary hover:bg-primary/10 transition-colors"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Concluir e ver o resultado
+              </button>
+            )}
           </div>
         )}
 

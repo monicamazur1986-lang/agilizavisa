@@ -59,6 +59,8 @@ export interface BombeirosOption {
 export interface BombeirosQuestion {
   id: BombeirosQuestionId;
   question: string;
+  /** Rótulo curto usado quando a pergunta já respondida é recolhida em uma linha. */
+  shortLabel: string;
   /** Detalhamento opcional do que a pergunta abrange. */
   help?: string;
   /** Dispositivo da Portaria que fundamenta a pergunta. */
