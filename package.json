@@ -9,6 +9,7 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
+    "deploy": "next build && firebase deploy --only hosting",
     "lint": "next lint",
     "genkit:ui": "genkit start -- npx tsx --watch src/ai/index.ts"
   },
