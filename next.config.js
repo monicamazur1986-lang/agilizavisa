@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // Site estático: o portal não tem rota de API nem ação de servidor, então o build
+  // gera HTML/JS puros, publicáveis no plano gratuito do Firebase Hosting.
+  output: 'export',
   images: {
+    // A otimização de imagens do Next exige servidor; no build estático ela é desligada.
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 'picsum.photos' }
     ]

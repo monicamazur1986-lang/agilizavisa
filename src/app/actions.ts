@@ -1,8 +1,12 @@
-'use server';
+'use client';
 
 /**
- * @fileOverview AÇÃO DE SERVIDOR ULTRA-RESILIENTE COM DIAGNÓSTICO DE API.
- * PREVINE ERRO 500 ATRAVÉS DE CAPTURA ABSOLUTA DE EXCEÇÕES E ESCUDO DE REDE.
+ * @fileOverview CONSULTA DE CNPJ ULTRA-RESILIENTE COM DIAGNÓSTICO DE API.
+ * CAPTURA ABSOLUTA DE EXCEÇÕES E ESCUDO DE REDE.
+ *
+ * Executa no navegador. A BrasilAPI é pública, não exige chave e responde com
+ * `access-control-allow-origin: *`, então a consulta dispensa servidor — o que
+ * permite publicar o portal como site estático.
  */
 
 import type { CompanyData, Cnae } from '@/lib/types';
@@ -16,16 +20,15 @@ export async function fetchCnpjData(cnpj: string): Promise<FetchResult> {
     const cleaned = cnpj ? String(cnpj).replace(/\D/g, '') : '';
     if (cleaned.length !== 14) return { success: false, error: "CNPJ INVÁLIDO. REQUER 14 NÚMEROS." };
 
-    // ESCUDO DE PERFORMANCE: TIMEOUT DE 7 SEGUNDOS PARA NÃO TRAVAR O SERVIDOR
+    // ESCUDO DE PERFORMANCE: TIMEOUT DE 7 SEGUNDOS PARA NÃO TRAVAR A INTERFACE
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 7000);
 
+    // Sem cabeçalhos personalizados: o navegador ignora User-Agent (cabeçalho proibido)
+    // e qualquer cabeçalho fora da lista segura dispararia uma requisição de verificação
+    // prévia (preflight) desnecessária.
     const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleaned}`, {
       method: 'GET',
-      headers: { 
-        'Accept': 'application/json', 
-        'User-Agent': 'AgilizaVISA-HighPerformance/2.0' 
-      },
       signal: controller.signal,
       cache: 'no-store'
     });
