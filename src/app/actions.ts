@@ -37,9 +37,21 @@ export async function fetchCnpjData(cnpj: string): Promise<FetchResult> {
 
     if (res.status === 404) return { success: false, error: "CNPJ NÃO ENCONTRADO NA BASE FEDERAL." };
     if (res.status === 429) return { success: false, error: "LIMITE DE REQUISIÇÕES EXCEDIDO NA API FEDERAL. TENTE NOVAMENTE EM ALGUNS MINUTOS." };
-    if (res.status >= 500) return { success: false, error: "SISTEMA FEDERAL EM MANUTENÇÃO." };
-    
-    if (!res.ok) return { success: false, error: "BASE EXTERNA INDISPONÍVEL." };
+    if (res.status >= 500) return { success: false, error: `SISTEMA FEDERAL EM MANUTENÇÃO. (HTTP ${res.status})` };
+
+    // O status entra na mensagem porque, sem ele, qualquer falha fora dos casos acima
+    // vira um texto genérico impossível de diagnosticar a partir do relato do usuário.
+    if (!res.ok) {
+      let detalhe = '';
+      try {
+        const corpo = await res.text();
+        if (corpo) detalhe = ` ${corpo.slice(0, 120)}`;
+      } catch {
+        /* corpo ilegível não impede o diagnóstico pelo status */
+      }
+      console.error('[AgilizaVISA] BrasilAPI respondeu', res.status, detalhe);
+      return { success: false, error: `BASE EXTERNA INDISPONÍVEL. (HTTP ${res.status})${detalhe}` };
+    }
 
     const data = await res.json();
     if (!data || typeof data !== 'object') return { success: false, error: "DADOS INVÁLIDOS NA RESPOSTA." };
@@ -78,8 +90,9 @@ export async function fetchCnpjData(cnpj: string): Promise<FetchResult> {
       }
     };
   } catch (error: any) {
-    console.error(error);
-    if (error.name === 'AbortError') return { success: false, error: "A CONSULTA DEMOROU MUITO (TIMEOUT). TENTE NOVAMENTE." };
-    return { success: false, error: "FALHA TÉCNICA NA COMUNICAÇÃO EXTERNA." };
+    console.error('[AgilizaVISA] Falha na consulta:', error);
+    if (error?.name === 'AbortError') return { success: false, error: "A CONSULTA DEMOROU MUITO (TIMEOUT). TENTE NOVAMENTE." };
+    const causa = error?.message ? ` (${String(error.message).slice(0, 120)})` : '';
+    return { success: false, error: `FALHA TÉCNICA NA COMUNICAÇÃO EXTERNA.${causa}` };
   }
 }
