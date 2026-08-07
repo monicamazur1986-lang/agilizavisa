@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { MaterialsList } from '@/components/MaterialsList';
 import { SimpleCnaeQuery } from '@/components/SimpleCnaeQuery';
+import { BombeirosPanel } from '@/components/BombeirosPanel';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import type { CompanyData, RiskAnalysisResult } from '@/lib/types';
@@ -153,6 +154,14 @@ function RiskClassificationMatrix() {
             <ArrowRight className="w-4 h-4" />
           </div>
         </a>
+        <a href="https://www.bombeiros.pr.gov.br/PrevFogo/Pagina/Legislacao-de-Prevencao-e-Combate-Incendios-e-Desastres" target="_blank" rel="noopener noreferrer" className="bg-card p-7 rounded-md hover:shadow-refined transition-shadow flex items-center justify-between group border border-border border-l-2 border-l-primary gap-6">
+          <span className="text-foreground/90 text-sm md:text-base leading-relaxed flex-1">
+            Acesse o <span className="font-semibold text-primary">site oficial</span> do Corpo de Bombeiros Militar do Paraná (CBMPR) para conferir a legislação de prevenção e combate a incêndios e a desastres.
+          </span>
+          <div className="w-10 h-10 border border-border rounded-full flex items-center justify-center text-primary group-hover:border-accent group-hover:text-accent transition-colors shrink-0">
+            <ArrowRight className="w-4 h-4" />
+          </div>
+        </a>
         <a href="https://prudentopolisprscp.equiplano.com.br:5028/tramitacaoProcesso/#/abertura-processo/entidade/41dd0a3a-f16f-4e8f-9b2a-8832e9191835/28" target="_blank" className="bg-card p-7 rounded-md hover:shadow-refined transition-shadow flex items-center gap-6 group border border-border border-l-2 border-l-primary">
           <div className="w-10 h-10 border border-border rounded-full flex items-center justify-center text-primary group-hover:border-accent group-hover:text-accent transition-colors shrink-0">
             <ArrowRight className="w-4 h-4" />
@@ -281,6 +290,9 @@ export default function Home() {
   const db = useFirestore();
   const [data, setData] = useState<CompanyData | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  // As perguntas do CBMPR são sobre o estabelecimento como um todo, não por CNAE,
+  // por isso ficam em um estado próprio, com chaves globais.
+  const [bombeirosAnswers, setBombeirosAnswers] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const [apiError, setApiError] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState('');
@@ -300,6 +312,7 @@ export default function Home() {
   const handleNewQuery = () => {
     setData(null);
     setAnswers({});
+    setBombeirosAnswers({});
     setApiError(null);
     reset();
     if (typeof window !== 'undefined') {
@@ -311,6 +324,7 @@ export default function Home() {
     const cleanedCnpj = values.cnpj.replace(/\D/g, '');
     setApiError(null);
     setAnswers({});
+    setBombeirosAnswers({});
 
     startTransition(async () => {
       try {
@@ -411,37 +425,22 @@ export default function Home() {
               <ContactSection />
             </div>
           ) : (
-            <div className="space-y-10 animate-in fade-in duration-500">
-              <Card className={`overflow-hidden border border-border border-t-2 ${currentTheme.borderClass} bg-card rounded-md shadow-refined-lg`}>
-                <div className={`${currentTheme.bgTintClass} py-14 px-8 text-center border-b border-border`}>
-                  <p className={`eyebrow mb-4 ${currentTheme.textClass}`}>Classificação do Estabelecimento</p>
-                  <h3 className={`font-display text-4xl md:text-6xl ${currentTheme.textClass} tracking-tight`}>
-                    {result?.level === 'CONDICIONADO' ? 'Risco Condicionado' :
-                     result?.level === 'NÃO ENCONTRADO' ? 'Atividade Não Localizada' :
-                     currentTheme.label}
-                  </h3>
-                  {result?.porte && (
-                    <div className={`mt-7 inline-flex p-3.5 px-5 rounded-sm border items-center justify-center gap-3 ${getPorteTheme(result.porte).bg} ${getPorteTheme(result.porte).border}`}>
-                      {(() => {
-                        const ThemeIcon = getPorteTheme(result.porte).icon;
-                        return <ThemeIcon className={`w-4 h-4 ${getPorteTheme(result.porte).text}`} strokeWidth={1.75} />;
-                      })()}
-                      <p className={`text-[11px] font-semibold ${getPorteTheme(result.porte).text} uppercase tracking-[0.15em]`}>
-                        Responsabilidade Fiscal: {result.porte}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <div className="p-6 md:p-14 space-y-12">
-                  <div className="text-center space-y-3">
-                    <h2 className="font-display text-xl md:text-2xl text-foreground tracking-tight">{data.razao_social}</h2>
-                    <div className="inline-block px-4 py-1.5 border border-border rounded-sm">
-                      <p className="text-primary font-mono text-sm md:text-lg font-medium tracking-widest">{data.cnpj}</p>
-                    </div>
+            <div className="space-y-8 animate-in fade-in duration-500">
+              {/* Cabeçalho comum: identifica a empresa e abre o relatório dos dois licenciamentos. */}
+              <Card className="overflow-hidden border border-border bg-card rounded-md shadow-refined-lg">
+                <div className="py-10 px-6 md:px-10 text-center space-y-4">
+                  <p className="eyebrow text-muted-foreground">Relatório de Licenciamento</p>
+                  <h2 className="font-display text-2xl md:text-3xl text-foreground tracking-tight">{data.razao_social}</h2>
+                  <div className="inline-block px-4 py-1.5 border border-border rounded-sm">
+                    <p className="text-primary font-mono text-sm md:text-lg font-medium tracking-widest">{data.cnpj}</p>
                   </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto pt-2">
+                    Os dois licenciamentos exigidos no Paraná são avaliados de forma independente:
+                    uma atividade pode ser dispensada por um órgão e exigida pelo outro.
+                  </p>
 
                   {data.situacaoCadastral && data.situacaoCadastral !== 'ATIVA' && (
-                    <div className="p-7 bg-destructive/10 border border-destructive/30 rounded-md space-y-2">
+                    <div className="p-7 bg-destructive/10 border border-destructive/30 rounded-md space-y-2 text-left !mt-7">
                       <div className="flex items-start gap-4">
                         <div className="p-2 border border-destructive/40 rounded-full shrink-0">
                           <AlertTriangle className="w-4 h-4 text-destructive" strokeWidth={1.75} />
@@ -449,12 +448,40 @@ export default function Home() {
                         <div className="space-y-1 flex-1">
                           <p className="eyebrow text-destructive">CNPJ com situação cadastral: {data.situacaoCadastral}</p>
                           <p className="text-sm text-foreground/90 leading-snug">
-                            Este CNPJ não consta como ATIVO na Receita Federal{data.motivoSituacaoCadastral && data.motivoSituacaoCadastral !== 'SEM MOTIVO' ? ` (motivo: ${data.motivoSituacaoCadastral})` : ''}. A classificação de risco abaixo é apenas referencial — este estabelecimento pode não estar apto a operar.
+                            Este CNPJ não consta como ATIVO na Receita Federal{data.motivoSituacaoCadastral && data.motivoSituacaoCadastral !== 'SEM MOTIVO' ? ` (motivo: ${data.motivoSituacaoCadastral})` : ''}. As classificações abaixo são apenas referenciais — este estabelecimento pode não estar apto a operar.
                           </p>
                         </div>
                       </div>
                     </div>
                   )}
+                </div>
+              </Card>
+
+              {/* Tela dividida ao meio: um órgão em cada coluna, com divisor central no desktop. */}
+              <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <div className="hidden lg:block absolute inset-y-0 left-1/2 w-px bg-border -translate-x-1/2" aria-hidden="true" />
+
+                <Card className={`overflow-hidden border border-border border-t-2 ${currentTheme.borderClass} bg-card rounded-md shadow-refined-lg`}>
+                  <div className={`${currentTheme.bgTintClass} py-10 px-6 text-center border-b border-border`}>
+                    <p className={`eyebrow mb-3 ${currentTheme.textClass}`}>Vigilância Sanitária</p>
+                    <h3 className={`font-display text-3xl md:text-4xl ${currentTheme.textClass} tracking-tight`}>
+                      {result?.level === 'CONDICIONADO' ? 'Risco Condicionado' :
+                       result?.level === 'NÃO ENCONTRADO' ? 'Atividade Não Localizada' :
+                       currentTheme.label}
+                    </h3>
+                    {result?.porte && (
+                      <div className={`mt-6 inline-flex p-3 px-4 rounded-sm border items-center justify-center gap-2.5 ${getPorteTheme(result.porte).bg} ${getPorteTheme(result.porte).border}`}>
+                        {(() => {
+                          const ThemeIcon = getPorteTheme(result.porte).icon;
+                          return <ThemeIcon className={`w-4 h-4 ${getPorteTheme(result.porte).text}`} strokeWidth={1.75} />;
+                        })()}
+                        <p className={`text-[11px] font-semibold ${getPorteTheme(result.porte).text} uppercase tracking-[0.15em]`}>
+                          Responsabilidade Fiscal: {result.porte}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6 md:p-8 space-y-10">
 
                   {result && (
                     <div className="relatorio-tecnico bg-secondary/60 p-6 md:p-10 rounded-md border border-border text-foreground/85 text-sm md:text-base">
@@ -601,14 +628,23 @@ export default function Home() {
                       })}
                     </div>
                   </div>
-                  <div className="flex flex-col items-center gap-7 pt-8 border-t border-border">
-                    <p className="text-[11px] text-muted-foreground tracking-wide">Relatório emitido em {currentDate}</p>
-                    <button onClick={handleNewQuery} className="h-12 px-8 rounded-sm border border-border text-muted-foreground text-[11px] uppercase tracking-[0.15em] hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2">
-                      <RotateCcw className="w-3.5 h-3.5" /> Efetuar Nova Pesquisa
-                    </button>
-                  </div>
                 </div>
               </Card>
+
+                {/* Coluna direita — Corpo de Bombeiros. */}
+                <BombeirosPanel
+                  cnaes={data.cnaes || []}
+                  answers={bombeirosAnswers}
+                  onAnswer={(id, value) => setBombeirosAnswers(prev => ({ ...prev, [id]: value }))}
+                />
+              </div>
+
+              <div className="flex flex-col items-center gap-7 pt-4">
+                <p className="text-[11px] text-muted-foreground tracking-wide">Relatório emitido em {currentDate}</p>
+                <button onClick={handleNewQuery} className="h-12 px-8 rounded-sm border border-border text-muted-foreground text-[11px] uppercase tracking-[0.15em] hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2">
+                  <RotateCcw className="w-3.5 h-3.5" /> Efetuar Nova Pesquisa
+                </button>
+              </div>
             </div>
           )}
         </main>
