@@ -18,7 +18,7 @@ export type FetchResult =
 export async function fetchCnpjData(cnpj: string): Promise<FetchResult> {
   try {
     const cleaned = cnpj ? String(cnpj).replace(/\D/g, '') : '';
-    if (cleaned.length !== 14) return { success: false, error: "CNPJ INVÁLIDO. REQUER 14 NÚMEROS." };
+    if (cleaned.length !== 14) return { success: false, error: "CNPJ inválido: são necessários 14 números. Confira o número digitado." };
 
     // ESCUDO DE PERFORMANCE: TIMEOUT DE 7 SEGUNDOS PARA NÃO TRAVAR A INTERFACE
     const controller = new AbortController();
@@ -35,26 +35,27 @@ export async function fetchCnpjData(cnpj: string): Promise<FetchResult> {
 
     clearTimeout(timeoutId);
 
-    if (res.status === 404) return { success: false, error: "CNPJ NÃO ENCONTRADO NA BASE FEDERAL." };
-    if (res.status === 429) return { success: false, error: "LIMITE DE REQUISIÇÕES EXCEDIDO NA API FEDERAL. TENTE NOVAMENTE EM ALGUNS MINUTOS." };
-    if (res.status >= 500) return { success: false, error: `SISTEMA FEDERAL EM MANUTENÇÃO. (HTTP ${res.status})` };
+    if (res.status === 404) return { success: false, error: "CNPJ não encontrado na base da Receita Federal. Confira o número digitado." };
+    if (res.status === 400) return { success: false, error: "A base federal recusou este CNPJ por formato inválido. Confira o número digitado. (HTTP 400)" };
+    if (res.status === 429) return { success: false, error: "A base federal atingiu o limite de consultas no momento. Aguarde alguns minutos e tente novamente. (HTTP 429)" };
+    if (res.status >= 500) return { success: false, error: `A base federal está fora do ar no momento. Tente novamente em alguns minutos. (HTTP ${res.status})` };
 
-    // O status entra na mensagem porque, sem ele, qualquer falha fora dos casos acima
-    // vira um texto genérico impossível de diagnosticar a partir do relato do usuário.
+    // O corpo da resposta é diagnóstico: vai para o console, nunca para a tela — despejar
+    // o JSON cru da API ao usuário não diz nada a quem só quer saber se pode abrir a empresa.
+    // O status fica na mensagem para tornar o relato do usuário diagnosticável.
     if (!res.ok) {
-      let detalhe = '';
+      let corpo = '';
       try {
-        const corpo = await res.text();
-        if (corpo) detalhe = ` ${corpo.slice(0, 120)}`;
+        corpo = (await res.text()).slice(0, 200);
       } catch {
         /* corpo ilegível não impede o diagnóstico pelo status */
       }
-      console.error('[AgilizaVISA] BrasilAPI respondeu', res.status, detalhe);
-      return { success: false, error: `BASE EXTERNA INDISPONÍVEL. (HTTP ${res.status})${detalhe}` };
+      console.error('[AgilizaVISA] BrasilAPI respondeu', res.status, corpo);
+      return { success: false, error: `A base federal não respondeu à consulta agora. Tente novamente em alguns instantes. (HTTP ${res.status})` };
     }
 
     const data = await res.json();
-    if (!data || typeof data !== 'object') return { success: false, error: "DADOS INVÁLIDOS NA RESPOSTA." };
+    if (!data || typeof data !== 'object') return { success: false, error: "A base federal devolveu uma resposta inesperada. Tente novamente em alguns instantes." };
 
     const normalize = (c: any) => String(c || '').replace(/\D/g, '').padStart(7, '0');
 
@@ -91,8 +92,7 @@ export async function fetchCnpjData(cnpj: string): Promise<FetchResult> {
     };
   } catch (error: any) {
     console.error('[AgilizaVISA] Falha na consulta:', error);
-    if (error?.name === 'AbortError') return { success: false, error: "A CONSULTA DEMOROU MUITO (TIMEOUT). TENTE NOVAMENTE." };
-    const causa = error?.message ? ` (${String(error.message).slice(0, 120)})` : '';
-    return { success: false, error: `FALHA TÉCNICA NA COMUNICAÇÃO EXTERNA.${causa}` };
+    if (error?.name === 'AbortError') return { success: false, error: "A consulta à base federal demorou demais para responder. Tente novamente." };
+    return { success: false, error: "Falha de comunicação com a base federal. Verifique sua conexão e tente novamente em alguns instantes." };
   }
 }

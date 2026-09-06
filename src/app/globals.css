@@ -4,6 +4,11 @@
 
 @layer base {
   :root {
+    /* A paleta é exclusivamente clara. Declarar o color-scheme impede que navegadores
+       em ambiente escuro (comum no Linux/GTK) pintem campos, scrollbars e autofill
+       com cores escuras sobre o layout claro. */
+    color-scheme: light;
+
     /* PALETA AGILIZA — AZUL CORPORATIVO, TECNOLÓGICO E CLARO */
     --background: 212 28% 97%;
     --foreground: 222 47% 11%;
@@ -109,14 +114,19 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* O texto de erro fica sobre um fundo claro (bg-destructive/4%), por isso usa a
+   cor destrutiva em si — nunca --destructive-foreground, que é quase branca e
+   some no fundo. */
 .error-text-technical {
-  color: hsl(var(--destructive-foreground)) !important;
+  color: hsl(var(--destructive));
   font-weight: 600 !important;
   text-align: left !important;
   font-size: 0.8125rem;
   letter-spacing: 0.02em;
+  line-height: 1.55;
   width: 100%;
   display: block;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- NUMERAÇÃO DE ITENS (CNAE) ---------- */

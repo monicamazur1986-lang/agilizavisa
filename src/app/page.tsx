@@ -9,7 +9,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Search, RotateCcw, Loader2, ArrowRight, Megaphone, MessageCircle, FileText, AlertTriangle, AlertCircle, CheckCircle2, HelpCircle, ShieldCheck } from 'lucide-react';
+import { Search, RotateCcw, Loader2, ArrowRight, Megaphone, MessageCircle, FileText, AlertTriangle, AlertCircle, CheckCircle2, HelpCircle, ShieldCheck, Flame, Building2 } from 'lucide-react';
 import { fetchCnpjData } from './actions';
 import { analyzeRisk, resolveCnaeRisk } from '@/lib/risk-analysis';
 import { RiskBadge, RiskIcon } from '@/components/risk-components';
@@ -150,16 +150,102 @@ const VISA_VEREDITOS: Record<string, { headline: string; detail: string; icon: a
 
 const getVisaVeredito = (level?: string) => (level ? VISA_VEREDITOS[level] : undefined);
 
+/**
+ * As frentes de licenciamento cobertas pelo portal. O alvará de localização ainda
+ * não está implementado e aparece marcado como "em breve" — nunca como consulta ativa.
+ */
+const LICENSING_TRACKS = [
+  {
+    icon: ShieldCheck,
+    accentText: 'text-primary',
+    accentBorder: 'border-t-primary',
+    accentTint: 'bg-primary/10',
+    eyebrow: 'Vigilância Sanitária',
+    title: 'A empresa precisa de licença sanitária?',
+    description:
+      'Classificação de risco de cada CNAE, porte de fiscalização do município e exigência de projeto, pela Resolução SESA nº 1.034/2020 e pelo Decreto Estadual nº 10.590/2025.',
+    status: null as string | null,
+  },
+  {
+    icon: Flame,
+    accentText: 'text-risk-alto',
+    accentBorder: 'border-t-risk-alto',
+    accentTint: 'bg-risk-alto/10',
+    eyebrow: 'Corpo de Bombeiros',
+    title: 'A empresa precisa de licença do CBMPR?',
+    description:
+      'Enquadramento nos anexos da Portaria do Comando-Geral nº 476/2025 e as perguntas que definem se o estabelecimento é dispensado ou obrigado ao licenciamento.',
+    status: null as string | null,
+  },
+  {
+    icon: Building2,
+    accentText: 'text-muted-foreground',
+    accentBorder: 'border-t-border',
+    accentTint: 'bg-muted',
+    eyebrow: 'Prefeitura',
+    title: 'Alvará de localização e funcionamento',
+    description:
+      'A verificação da exigência de alvará municipal está em desenvolvimento e passará a sair na mesma consulta, junto das demais licenças.',
+    status: 'Em breve',
+  },
+];
+
+function LicensingScope() {
+  return (
+    <div className="px-4 space-y-8">
+      <div className="text-center space-y-4 max-w-2xl mx-auto">
+        <p className="eyebrow text-muted-foreground">O que a consulta responde</p>
+        <h2 className="font-display text-3xl md:text-4xl text-foreground tracking-tight">
+          Um CNPJ, todas as licenças
+        </h2>
+        <p className="text-muted-foreground leading-relaxed">
+          Cada órgão tem regra própria: a dispensa em um não vale para o outro. O portal reúne essas
+          frentes em uma consulta só, para o empreendedor saber tudo de que precisa antes de abrir as portas.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {LICENSING_TRACKS.map((track) => {
+          const TrackIcon = track.icon;
+          return (
+            <div
+              key={track.eyebrow}
+              className={`bg-card p-7 rounded-md border border-border border-t-2 ${track.accentBorder} flex flex-col gap-4`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className={`p-2.5 rounded-full ${track.accentTint} border border-border shrink-0`}>
+                  <TrackIcon className={`w-4 h-4 ${track.accentText}`} strokeWidth={1.75} />
+                </div>
+                {track.status && (
+                  <span className="px-3 py-1 rounded-sm border border-border bg-secondary text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {track.status}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2 flex-1">
+                <p className={`eyebrow ${track.accentText}`}>{track.eyebrow}</p>
+                <p className="text-sm md:text-base font-medium text-foreground/90 leading-snug">{track.title}</p>
+                <p className="text-[13px] text-foreground/70 leading-relaxed">{track.description}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function RiskClassificationMatrix() {
   return (
     <div className="mt-14 mb-20 px-4 space-y-10">
       <div className="text-center space-y-4 max-w-2xl mx-auto">
-        <p className="eyebrow text-muted-foreground">Como funciona</p>
+        <p className="eyebrow text-primary">Vigilância Sanitária</p>
         <h2 className="font-display text-3xl md:text-4xl text-foreground tracking-tight">
-          Classificação de Risco Sanitário
+          Como funciona a classificação de risco
         </h2>
         <p className="text-muted-foreground leading-relaxed">
-          Entenda o nível de exigência sanitária necessário para o funcionamento da sua atividade, conforme a Resolução SESA nº 1.034/2020 e o Decreto Estadual nº 10.590/2025, do Paraná.
+          Na frente sanitária, o nível de exigência para funcionar sai da classificação de risco da atividade,
+          conforme a Resolução SESA nº 1.034/2020 e o Decreto Estadual nº 10.590/2025, do Paraná.
         </p>
       </div>
 
@@ -247,6 +333,18 @@ function ContactSection() {
 
 const FAQ_ITEMS = [
   {
+    q: "O que o portal consulta a partir do CNPJ?",
+    a: "Duas frentes de licenciamento, hoje: a da Vigilância Sanitária, com a classificação de risco de cada CNAE da empresa, o porte de fiscalização e as exigências de projeto; e a do Corpo de Bombeiros Militar do Paraná, com o enquadramento nos anexos da Portaria do Comando-Geral nº 476/2025. A consulta ao alvará de localização e funcionamento do município está em desenvolvimento e será incorporada à mesma tela."
+  },
+  {
+    q: "A dispensa da Vigilância Sanitária vale para o Corpo de Bombeiros?",
+    a: "Não. São licenciamentos independentes, com bases legais e critérios diferentes. Uma atividade pode ser dispensada pela Vigilância Sanitária e ainda assim exigir licença do Corpo de Bombeiros, ou o contrário. Por isso o resultado de cada órgão aparece em sua própria coluna. Vale lembrar que, mesmo dispensado do licenciamento, o estabelecimento continua obrigado a manter as medidas de prevenção e combate a incêndio."
+  },
+  {
+    q: "Quando o alvará de localização entra na consulta?",
+    a: "A funcionalidade está em desenvolvimento e ainda não tem data de publicação. Até lá, o alvará de localização e funcionamento deve ser tratado diretamente com a prefeitura do município onde a empresa está estabelecida."
+  },
+  {
     q: "O que significa cada nível de risco (Baixo, Médio, Alto e Condicionado)?",
     a: "Baixo Risco dispensa o estabelecimento de licenciamento sanitário para iniciar as operações. Médio Risco permite licença sanitária simplificada, sem inspeção prévia. Alto Risco exige inspeção sanitária e/ou análise documental antes do início das atividades. Risco Condicionado depende das respostas a um questionário técnico sobre a infraestrutura e os processos de trabalho para ser definido como Baixo, Médio ou Alto."
   },
@@ -267,8 +365,8 @@ const FAQ_ITEMS = [
     a: "Recomendamos consultar diretamente a Vigilância Sanitária do seu município para o enquadramento individualizado, já que a classificação segue o rol taxativo oficial da Resolução SESA nº 1.034/2020 e do Decreto Estadual nº 10.590/2025."
   },
   {
-    q: "Esta consulta substitui a licença sanitária ou é um documento oficial?",
-    a: "Não. O Agiliza Visa é uma ferramenta informativa e gratuita para orientar o empreendedor sobre a classificação de risco prevista em lei. A licença sanitária, quando exigida, deve ser solicitada junto à Vigilância Sanitária do município onde a empresa está estabelecida."
+    q: "Esta consulta substitui as licenças ou é um documento oficial?",
+    a: "Não. O AgilizaVISA é uma ferramenta informativa e gratuita, que orienta o empreendedor sobre as exigências previstas em lei. A licença sanitária, quando exigida, deve ser solicitada à Vigilância Sanitária do município onde a empresa está estabelecida; a licença de prevenção a incêndio, ao Corpo de Bombeiros Militar do Paraná."
   },
   {
     q: "Como solicito ou renovo a licença sanitária do meu estabelecimento?",
@@ -389,9 +487,16 @@ export default function Home() {
                 <div className="w-16 h-px bg-accent/50 mx-auto" />
               </div>
             </div>
-            <p className="text-fluid-subtitle text-muted-foreground max-w-xl mx-auto leading-relaxed px-4">
-              Consulte a necessidade de licenciamento sanitário no Paraná e junto ao Corpo de Bombeiros (CBMPR) da sua empresa, direto pelo CNPJ.
-            </p>
+            <div className="space-y-4 max-w-2xl mx-auto px-4">
+              <p className="eyebrow text-muted-foreground">Portal de licenciamento de empresas · Paraná</p>
+              <p className="text-fluid-subtitle text-muted-foreground leading-relaxed">
+                Informe o CNPJ e saiba o que a empresa precisa para funcionar: qual é a classificação de
+                risco sanitário da atividade e se ela exige licença da{' '}
+                <span className="text-foreground font-medium">Vigilância Sanitária</span> e do{' '}
+                <span className="text-foreground font-medium">Corpo de Bombeiros</span>.
+                Em breve, a consulta também dirá se é preciso alvará de localização.
+              </p>
+            </div>
           </header>
         )}
 
@@ -401,8 +506,14 @@ export default function Home() {
               <Card className="p-8 md:p-16 bg-card border border-border rounded-md shadow-refined-lg overflow-hidden relative">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
                 {apiError && (
-                  <div className="mb-10 pl-5 py-4 border-l-2 border-destructive bg-destructive/[0.04]">
-                    <span className="error-text-technical text-destructive">{apiError}</span>
+                  <div className="mb-10 p-5 rounded-md border border-destructive/40 border-l-2 border-l-destructive bg-destructive/[0.06] flex items-start gap-4">
+                    <div className="p-2 border border-destructive/40 rounded-full shrink-0">
+                      <AlertTriangle className="w-4 h-4 text-destructive" strokeWidth={1.75} />
+                    </div>
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <p className="eyebrow text-destructive">Não foi possível consultar</p>
+                      <span className="error-text-technical">{apiError}</span>
+                    </div>
                   </div>
                 )}
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
@@ -410,6 +521,9 @@ export default function Home() {
                     <Label className="eyebrow block text-muted-foreground">
                       Informe o CNPJ
                     </Label>
+                    <p className="text-[13px] text-muted-foreground leading-relaxed max-w-md mx-auto">
+                      Uma única consulta responde pela Vigilância Sanitária e pelo Corpo de Bombeiros.
+                    </p>
                     <div className="relative">
                       <Input
                         {...register('cnpj')}
@@ -427,10 +541,12 @@ export default function Home() {
                   {errors.cnpj && <p className="text-destructive text-xs font-medium text-center">{String(errors.cnpj.message)}</p>}
                   <button type="submit" disabled={isPending} className="w-full h-14 md:h-16 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md font-semibold text-[13px] md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3 transition-all shadow-refined active:scale-[0.99] disabled:opacity-50">
                     {isPending ? <Loader2 className="animate-spin w-5 h-5" /> : <Search className="w-4 h-4" />}
-                    Consultar Risco Sanitário
+                    Consultar Licenciamento
                   </button>
                 </form>
               </Card>
+
+              <LicensingScope />
 
               <RiskClassificationMatrix />
 
@@ -442,7 +558,10 @@ export default function Home() {
                 </div>
                 <div className="space-y-1.5 text-center md:text-left">
                   <h3 className="font-display text-xl md:text-2xl text-primary-foreground">Atenção, empreendedor</h3>
-                  <p className="text-primary-foreground/75 text-sm leading-relaxed">Mais de 900 atividades são dispensadas de licenciamento no Estado do Paraná.</p>
+                  <p className="text-primary-foreground/75 text-sm leading-relaxed">
+                    Mais de 900 atividades são dispensadas do licenciamento sanitário no Paraná — e essa
+                    dispensa não vale para o Corpo de Bombeiros, que segue regra própria.
+                  </p>
                 </div>
               </div>
               <ContactSection />
@@ -634,9 +753,10 @@ export default function Home() {
                         const cnaeRes = resolveCnaeRisk(c.code, answers);
                         const cnaeTheme = RISK_THEMES[cnaeRes.risk] || RISK_THEMES['NÃO ENCONTRADO'];
                         return (
-                          <div key={`${c.code}-${idx}`} className="numbered-item py-7 flex flex-col md:flex-row md:items-start justify-between gap-5">
-                              <div className="flex gap-4 flex-1">
-                                <div className="space-y-2 flex-1">
+                          <div key={`${c.code}-${idx}`} className="numbered-item py-7 flex gap-4">
+                            <div className="flex-1 min-w-0 space-y-5">
+                              <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
+                                <div className="space-y-2 flex-1 min-w-0">
                                   <code className="text-[11px] font-medium text-primary bg-secondary px-2.5 py-1 rounded-sm">{c.code}</code>
                                   <p className="text-sm md:text-base text-foreground/90 leading-snug">{c.description}</p>
                                   {cnaeRes.porte && (
@@ -651,25 +771,30 @@ export default function Home() {
                                     </div>
                                   )}
                                 </div>
+                                <div className="flex md:justify-end shrink-0">
+                                  <RiskBadge level={cnaeRes.risk} />
+                                </div>
                               </div>
-                            <div className="flex md:justify-end shrink-0">
-                              <RiskBadge level={cnaeRes.risk} />
+
+                              {cnaeRes.risk === 'CONDICIONADO' && cnaeRes.path && (
+                                <div className="p-6 bg-secondary/60 rounded-sm space-y-5 border border-border border-l-2 border-l-risk-condicionado">
+                                  <div className="space-y-1.5">
+                                    <p className="eyebrow text-risk-condicionado">Responda para definir o risco</p>
+                                    <p className="text-sm text-foreground/90 leading-snug">{cnaeRes.question}</p>
+                                  </div>
+                                  <RadioGroup value={answers[cnaeRes.path] || ""} onValueChange={(v) => setAnswers(prev => ({ ...prev, [cnaeRes.path!]: v }))} className="flex flex-wrap gap-3">
+                                    <div className="flex items-center space-x-3 bg-card px-6 py-3 rounded-md border border-border hover:border-primary transition-colors">
+                                      <RadioGroupItem value="Sim" id={`${cnaeRes.path}-sim`} className="h-4 w-4 border-primary" />
+                                      <Label htmlFor={`${cnaeRes.path}-sim`} className="text-foreground text-sm cursor-pointer">Sim</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-3 bg-card px-6 py-3 rounded-md border border-border hover:border-primary transition-colors">
+                                      <RadioGroupItem value="Não" id={`${cnaeRes.path}-nao`} className="h-4 w-4 border-primary" />
+                                      <Label htmlFor={`${cnaeRes.path}-nao`} className="text-foreground text-sm cursor-pointer">Não</Label>
+                                    </div>
+                                  </RadioGroup>
+                                </div>
+                              )}
                             </div>
-                            {cnaeRes.risk === 'CONDICIONADO' && cnaeRes.path && (
-                              <div className="w-full mt-2 p-6 bg-secondary/60 rounded-sm space-y-5 border border-border">
-                                <p className="text-muted-foreground text-[13px] leading-snug">{cnaeRes.question}</p>
-                                <RadioGroup value={answers[cnaeRes.path] || ""} onValueChange={(v) => setAnswers(prev => ({ ...prev, [cnaeRes.path!]: v }))} className="flex gap-8">
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="Sim" id={`${cnaeRes.path}-sim`} className="h-4 w-4 border-primary" />
-                                    <Label htmlFor={`${cnaeRes.path}-sim`} className="text-foreground text-sm cursor-pointer">Sim</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="Não" id={`${cnaeRes.path}-nao`} className="h-4 w-4 border-primary" />
-                                    <Label htmlFor={`${cnaeRes.path}-nao`} className="text-foreground text-sm cursor-pointer">Não</Label>
-                                  </div>
-                                </RadioGroup>
-                              </div>
-                            )}
                           </div>
                       );
                       })}
