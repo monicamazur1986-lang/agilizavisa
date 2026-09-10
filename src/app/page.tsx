@@ -5,7 +5,7 @@
  * RESOLUÇÃO SESA Nº 1034/2020 | DECRETO ESTADUAL Nº 10.590/2025.
  */
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -414,6 +414,10 @@ export default function Home() {
   // As perguntas do CBMPR são sobre o estabelecimento como um todo, não por CNAE,
   // por isso ficam em um estado próprio, com chaves globais.
   const [bombeirosAnswers, setBombeirosAnswers] = useState<Record<string, string>>({});
+  // Os dois licenciamentos se alternam: só um fica aberto por vez. A consulta começa
+  // pela Vigilância Sanitária, e a do CBMPR só aparece quando acionada.
+  const [orgaoAtivo, setOrgaoAtivo] = useState<'VISA' | 'CBMPR'>('VISA');
+  const painelRef = useRef<HTMLDivElement | null>(null);
   const [isPending, startTransition] = useTransition();
   const [apiError, setApiError] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState('');
@@ -430,10 +434,20 @@ export default function Home() {
   const result: RiskAnalysisResult | null = data ? analyzeRisk(data.cnaes || [], answers) : null;
   const currentTheme = result?.level ? (RISK_THEMES[result.level] || RISK_THEMES['NÃO ENCONTRADO']) : RISK_THEMES['NÃO ENCONTRADO'];
 
+  /** Troca o órgão em exibição: um encerra e o outro executa, nunca os dois juntos. */
+  const alternarOrgao = (destino: 'VISA' | 'CBMPR') => {
+    setOrgaoAtivo(destino);
+    // Sem isso, quem aciona no rodapé de um painel longo cai no meio do painel seguinte.
+    requestAnimationFrame(() => {
+      painelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   const handleNewQuery = () => {
     setData(null);
     setAnswers({});
     setBombeirosAnswers({});
+    setOrgaoAtivo('VISA');
     setApiError(null);
     reset();
     if (typeof window !== 'undefined') {
@@ -446,6 +460,7 @@ export default function Home() {
     setApiError(null);
     setAnswers({});
     setBombeirosAnswers({});
+    setOrgaoAtivo('VISA');
 
     startTransition(async () => {
       try {
@@ -599,11 +614,11 @@ export default function Home() {
                 </div>
               </Card>
 
-              {/* Tela dividida ao meio: um órgão em cada coluna, com divisor central no desktop. */}
-              <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                <div className="hidden lg:block absolute inset-y-0 left-1/2 w-px bg-border -translate-x-1/2" aria-hidden="true" />
-
-                <Card className={`overflow-hidden border border-border border-t-2 ${currentTheme.borderClass} bg-card rounded-md shadow-refined-lg`}>
+              {/* Um órgão de cada vez: o painel ativo ocupa a tela inteira e a troca
+                  se dá pelos botões de acionamento abaixo de cada resultado. */}
+              <div ref={painelRef} className="scroll-mt-6 space-y-8">
+                {orgaoAtivo === 'VISA' ? (
+                <Card className={`overflow-hidden border border-border border-t-2 ${currentTheme.borderClass} bg-card rounded-md shadow-refined-lg animate-in fade-in duration-300`}>
                   <div className={`${currentTheme.bgTintClass} py-10 px-6 text-center border-b border-border`}>
                     <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 mb-5 rounded-full bg-card border ${currentTheme.borderSoftClass} shadow-refined`}>
                       <ShieldCheck className={`w-[18px] h-[18px] ${currentTheme.textClass}`} strokeWidth={2} />
@@ -802,13 +817,59 @@ export default function Home() {
                   </div>
                 </div>
               </Card>
+                ) : (
+                  <div className="animate-in fade-in duration-300">
+                    <BombeirosPanel
+                      cnaes={data.cnaes || []}
+                      answers={bombeirosAnswers}
+                      onAnswer={(id, value) => setBombeirosAnswers(prev => ({ ...prev, [id]: value }))}
+                    />
+                  </div>
+                )}
 
-                {/* Coluna direita — Corpo de Bombeiros. */}
-                <BombeirosPanel
-                  cnaes={data.cnaes || []}
-                  answers={bombeirosAnswers}
-                  onAnswer={(id, value) => setBombeirosAnswers(prev => ({ ...prev, [id]: value }))}
-                />
+                {/* Acionamento do outro licenciamento: encerra o painel atual e abre o outro. */}
+                {orgaoAtivo === 'VISA' ? (
+                  <div className="p-7 md:p-8 bg-card border border-border border-l-2 border-l-risk-alto rounded-md flex flex-col md:flex-row md:items-center gap-6">
+                    <div className="p-2.5 bg-risk-alto/10 border border-border rounded-full shrink-0 w-fit">
+                      <Flame className="w-4 h-4 text-risk-alto" strokeWidth={1.75} />
+                    </div>
+                    <div className="space-y-1.5 flex-1">
+                      <p className="eyebrow text-risk-alto">Corpo de Bombeiros</p>
+                      <p className="text-sm text-foreground/80 leading-relaxed">
+                        Licenciamento independente do sanitário, com regra própria. A consulta abre no
+                        lugar deste resultado — você volta a ele quando quiser.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => alternarOrgao('CBMPR')}
+                      className="h-12 px-7 rounded-md bg-risk-alto text-primary-foreground text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center gap-2.5 transition-all hover:opacity-90 active:scale-[0.99] shrink-0"
+                    >
+                      <Flame className="w-3.5 h-3.5" strokeWidth={2} />
+                      Consultar Bombeiros
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-7 md:p-8 bg-card border border-border border-l-2 border-l-primary rounded-md flex flex-col md:flex-row md:items-center gap-6">
+                    <div className="p-2.5 bg-primary/10 border border-border rounded-full shrink-0 w-fit">
+                      <ShieldCheck className="w-4 h-4 text-primary" strokeWidth={1.75} />
+                    </div>
+                    <div className="space-y-1.5 flex-1">
+                      <p className="eyebrow text-primary">Vigilância Sanitária</p>
+                      <p className="text-sm text-foreground/80 leading-relaxed">
+                        O resultado sanitário continua guardado, com as respostas que você já deu.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => alternarOrgao('VISA')}
+                      className="h-12 px-7 rounded-md bg-primary text-primary-foreground text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center gap-2.5 transition-all hover:bg-primary/90 active:scale-[0.99] shrink-0"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" strokeWidth={2} />
+                      Voltar à Vigilância
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col items-center gap-7 pt-4">
