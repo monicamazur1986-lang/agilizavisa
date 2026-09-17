@@ -417,6 +417,9 @@ export default function Home() {
   // Os dois licenciamentos se alternam: só um fica aberto por vez. A consulta começa
   // pela Vigilância Sanitária, e a do CBMPR só aparece quando acionada.
   const [orgaoAtivo, setOrgaoAtivo] = useState<'VISA' | 'CBMPR'>('VISA');
+  // A consulta ao CBMPR só acontece com o aceite explícito do usuário; quem recusa
+  // recolhe o convite, que fica reduzido a uma linha reabrível.
+  const [bombeirosDispensado, setBombeirosDispensado] = useState(false);
   const painelRef = useRef<HTMLDivElement | null>(null);
   const [isPending, startTransition] = useTransition();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -448,6 +451,7 @@ export default function Home() {
     setAnswers({});
     setBombeirosAnswers({});
     setOrgaoAtivo('VISA');
+    setBombeirosDispensado(false);
     setApiError(null);
     reset();
     if (typeof window !== 'undefined') {
@@ -461,6 +465,7 @@ export default function Home() {
     setAnswers({});
     setBombeirosAnswers({});
     setOrgaoAtivo('VISA');
+    setBombeirosDispensado(false);
 
     startTransition(async () => {
       try {
@@ -829,26 +834,57 @@ export default function Home() {
 
                 {/* Acionamento do outro licenciamento: encerra o painel atual e abre o outro. */}
                 {orgaoAtivo === 'VISA' ? (
-                  <div className="p-7 md:p-8 bg-card border border-border border-l-2 border-l-risk-alto rounded-md flex flex-col md:flex-row md:items-center gap-6">
-                    <div className="p-2.5 bg-risk-alto/10 border border-border rounded-full shrink-0 w-fit">
-                      <Flame className="w-4 h-4 text-risk-alto" strokeWidth={1.75} />
+                  !bombeirosDispensado ? (
+                    <div className="p-7 md:p-8 bg-card border border-border border-l-2 border-l-risk-alto rounded-md space-y-6">
+                      <div className="flex flex-col md:flex-row md:items-start gap-5">
+                        <div className="p-2.5 bg-risk-alto/10 border border-border rounded-full shrink-0 w-fit">
+                          <Flame className="w-4 h-4 text-risk-alto" strokeWidth={1.75} />
+                        </div>
+                        <div className="space-y-2 flex-1">
+                          <p className="eyebrow text-risk-alto">Corpo de Bombeiros</p>
+                          <p className="text-base md:text-lg font-medium text-foreground/90 leading-snug">
+                            Deseja consultar a licença do Corpo de Bombeiros?
+                          </p>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            É um licenciamento independente do sanitário, com regra própria: a dispensa da
+                            Vigilância Sanitária não vale para o Corpo de Bombeiros. A consulta abre no lugar
+                            deste resultado, e você volta a ele quando quiser.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-3 md:pl-16">
+                        <button
+                          type="button"
+                          onClick={() => alternarOrgao('CBMPR')}
+                          className="h-12 px-7 rounded-md bg-risk-alto text-primary-foreground text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center gap-2.5 transition-all hover:opacity-90 active:scale-[0.99]"
+                        >
+                          <Flame className="w-3.5 h-3.5" strokeWidth={2} />
+                          Sim, consultar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBombeirosDispensado(true)}
+                          className="h-12 px-7 rounded-md border border-border text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center transition-colors hover:border-primary hover:text-primary"
+                        >
+                          Agora não
+                        </button>
+                      </div>
                     </div>
-                    <div className="space-y-1.5 flex-1">
-                      <p className="eyebrow text-risk-alto">Corpo de Bombeiros</p>
-                      <p className="text-sm text-foreground/80 leading-relaxed">
-                        Licenciamento independente do sanitário, com regra própria. A consulta abre no
-                        lugar deste resultado — você volta a ele quando quiser.
+                  ) : (
+                    <div className="p-6 bg-secondary/40 border border-border rounded-md flex flex-col sm:flex-row sm:items-center gap-4">
+                      <p className="text-[13px] text-muted-foreground leading-relaxed flex-1">
+                        A consulta ao Corpo de Bombeiros não foi realizada.
                       </p>
+                      <button
+                        type="button"
+                        onClick={() => setBombeirosDispensado(false)}
+                        className="h-11 px-6 rounded-md border border-border text-risk-alto text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center gap-2.5 transition-colors hover:border-risk-alto shrink-0"
+                      >
+                        <Flame className="w-3.5 h-3.5" strokeWidth={2} />
+                        Consultar agora
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => alternarOrgao('CBMPR')}
-                      className="h-12 px-7 rounded-md bg-risk-alto text-primary-foreground text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center gap-2.5 transition-all hover:opacity-90 active:scale-[0.99] shrink-0"
-                    >
-                      <Flame className="w-3.5 h-3.5" strokeWidth={2} />
-                      Consultar Bombeiros
-                    </button>
-                  </div>
+                  )
                 ) : (
                   <div className="p-7 md:p-8 bg-card border border-border border-l-2 border-l-primary rounded-md flex flex-col md:flex-row md:items-center gap-6">
                     <div className="p-2.5 bg-primary/10 border border-border rounded-full shrink-0 w-fit">
