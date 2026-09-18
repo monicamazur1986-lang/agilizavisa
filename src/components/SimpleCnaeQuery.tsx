@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, AlertTriangle, AlertCircle, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
+import { AlertTriangle, AlertCircle, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
 import { resolveCnaeRisk } from '@/lib/risk-analysis';
 import { RiskBadge } from './risk-components';
 import { Card } from './ui/card';
@@ -62,16 +62,9 @@ export function SimpleCnaeQuery() {
   };
 
   return (
-    <Card className="p-8 md:p-14 bg-card border border-border rounded-md shadow-refined overflow-hidden relative mt-14">
+    <Card className="p-8 md:p-12 bg-card border border-border rounded-md shadow-refined overflow-hidden relative">
       <div className="space-y-9">
-        <div className="text-center space-y-2">
-          <p className="eyebrow text-muted-foreground">Antes de abrir sua empresa</p>
-          <h3 className="font-display text-2xl md:text-3xl text-foreground flex items-center justify-center gap-3">
-            <Search className="w-5 h-5 text-accent" strokeWidth={1.75} />
-            Consulta Prévia por CNAE
-          </h3>
-        </div>
-
+        {/* O cabeçalho vive na seção que embrulha este cartão; aqui fica só a ação. */}
         <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
           <div className="w-full md:w-64">
             <Input

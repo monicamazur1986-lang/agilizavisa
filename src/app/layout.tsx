@@ -1,14 +1,19 @@
 import type { Metadata } from 'next';
-import { Manrope } from 'next/font/google';
+import { Manrope, Archivo, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
+// Corpo: continuidade com a identidade atual do portal.
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans' });
+// Títulos: grotesca de sinalização — o mesmo parentesco visual de placa e alvará.
+const archivo = Archivo({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display' });
+// Dados: CNPJ e códigos CNAE pedem largura fixa para serem conferidos dígito a dígito.
+const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-mono' });
 
 export const metadata: Metadata = {
-  title: 'AgilizaVISA – Licenciamento de empresas no Paraná',
-  description: 'Portal informativo para consultar a necessidade de licenciamento sanitário e do Corpo de Bombeiros para empresas no Paraná, direto pelo CNPJ, com base na Resolução SESA nº 1034/2020, no Decreto Estadual nº 10.590/2025 e na Portaria CBMPR nº 476/2025. Em breve, também o alvará de localização.',
+  title: 'Agiliza – Quais licenças o seu estabelecimento precisa no Paraná',
+  description: 'Informe o CNPJ e veja em segundos quais licenças o seu negócio precisa para funcionar no Paraná: Vigilância Sanitária, Corpo de Bombeiros e, em breve, o alvará de localização.',
 };
 
 export default function RootLayout({
@@ -19,9 +24,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="https://picsum.photos/seed/1/32/32" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
-      <body className={`${manrope.variable} font-sans`}>
+      <body className={`${manrope.variable} ${archivo.variable} ${plexMono.variable} font-sans`}>
         <FirebaseClientProvider>
           {children}
           <Toaster />

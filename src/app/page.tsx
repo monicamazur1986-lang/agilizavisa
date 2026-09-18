@@ -151,6 +151,73 @@ const VISA_VEREDITOS: Record<string, { headline: string; detail: string; icon: a
 const getVisaVeredito = (level?: string) => (level ? VISA_VEREDITOS[level] : undefined);
 
 /**
+ * A assinatura da página. A marca do portal é uma lâmpada, então cada licença é uma
+ * luz: apagadas, dizem o que ainda não se sabe sobre o negócio; a consulta acende.
+ */
+function LampPanel({ acesa = false, className = '' }: { acesa?: boolean; className?: string }) {
+  const LUZES = ['Vigilância Sanitária', 'Corpo de Bombeiros', 'Alvará de localização'];
+  return (
+    <div className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-7 ${className}`}>
+      {LUZES.map((luz, i) => (
+        <div key={luz} className="flex items-center gap-2.5">
+          {/* Durante a consulta as luzes acendem em sequência: é a espera virando resposta. */}
+          <span
+            className={`lamp shrink-0 ${acesa ? 'lamp-on' : ''}`}
+            style={acesa ? { animationDelay: `${i * 180}ms` } : undefined}
+            aria-hidden="true"
+          />
+          <span className={`text-[11px] font-medium uppercase tracking-[0.16em] transition-colors ${acesa ? 'text-white/80' : 'text-white/45'}`}>
+            {luz}
+            {i === 2 && <span className="text-white/25"> · em breve</span>}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Os três passos são uma sequência real da consulta, por isso vão numerados. */
+const PASSOS = [
+  {
+    titulo: 'Informe o CNPJ',
+    texto: 'A consulta puxa da Receita Federal a razão social, a situação cadastral e todos os CNAEs registrados no seu negócio.',
+  },
+  {
+    titulo: 'Responda o que for perguntado',
+    texto: 'Algumas atividades só se definem pelo caso concreto: área do imóvel, lotação, uso de gás. Você responde e a classificação se ajusta na hora.',
+  },
+  {
+    titulo: 'Veja o que falta para abrir',
+    texto: 'O veredito sai por órgão, com a base legal de cada exigência — e você decide se quer consultar também o Corpo de Bombeiros.',
+  },
+];
+
+function ComoFunciona() {
+  return (
+    <div className="px-4 space-y-10">
+      <div className="max-w-2xl space-y-4">
+        <p className="eyebrow text-sinal">Como funciona</p>
+        <h2 className="font-display text-3xl md:text-[2.75rem] text-foreground leading-[1.05]">
+          Três passos, nenhum cadastro
+        </h2>
+      </div>
+
+      <div className="grid gap-px bg-border md:grid-cols-3 rounded-md overflow-hidden border border-border">
+        {PASSOS.map((passo, i) => (
+          <div key={passo.titulo} className="bg-card p-8 space-y-4">
+            <span className="font-mono text-sm font-semibold text-sinal">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <p className="font-display text-xl text-foreground leading-tight">{passo.titulo}</p>
+            <p className="text-sm text-foreground/70 leading-relaxed">{passo.texto}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * As frentes de licenciamento cobertas pelo portal. O alvará de localização ainda
  * não está implementado e aparece marcado como "em breve" — nunca como consulta ativa.
  */
@@ -192,15 +259,15 @@ const LICENSING_TRACKS = [
 
 function LicensingScope() {
   return (
-    <div className="px-4 space-y-8">
-      <div className="text-center space-y-4 max-w-2xl mx-auto">
-        <p className="eyebrow text-muted-foreground">O que a consulta responde</p>
-        <h2 className="font-display text-3xl md:text-4xl text-foreground tracking-tight">
+    <div className="px-4 space-y-10">
+      <div className="max-w-2xl space-y-4">
+        <p className="eyebrow text-sinal">O que você descobre</p>
+        <h2 className="font-display text-3xl md:text-[2.75rem] text-foreground leading-[1.05]">
           Um CNPJ, todas as licenças
         </h2>
-        <p className="text-muted-foreground leading-relaxed">
-          Cada órgão tem regra própria: a dispensa em um não vale para o outro. O portal reúne essas
-          frentes em uma consulta só, para o empreendedor saber tudo de que precisa antes de abrir as portas.
+        <p className="text-foreground/70 leading-relaxed">
+          Cada órgão decide por conta própria, e a dispensa de um não vale para o outro. É por isso
+          que tanta gente abre a empresa achando que está tudo certo e descobre a pendência na fiscalização.
         </p>
       </div>
 
@@ -210,7 +277,7 @@ function LicensingScope() {
           return (
             <div
               key={track.eyebrow}
-              className={`bg-card p-7 rounded-md border border-border border-t-2 ${track.accentBorder} flex flex-col gap-4`}
+              className={`bg-card p-8 rounded-md border border-border border-t-2 ${track.accentBorder} flex flex-col gap-5`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className={`p-2.5 rounded-full ${track.accentTint} border border-border shrink-0`}>
@@ -222,10 +289,10 @@ function LicensingScope() {
                   </span>
                 )}
               </div>
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2.5 flex-1">
                 <p className={`eyebrow ${track.accentText}`}>{track.eyebrow}</p>
-                <p className="text-sm md:text-base font-medium text-foreground/90 leading-snug">{track.title}</p>
-                <p className="text-[13px] text-foreground/70 leading-relaxed">{track.description}</p>
+                <p className="font-display text-lg text-foreground leading-tight">{track.title}</p>
+                <p className="text-[13px] text-foreground/65 leading-relaxed">{track.description}</p>
               </div>
             </div>
           );
@@ -266,39 +333,53 @@ function RiskClassificationMatrix() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 max-w-4xl mx-auto pt-4">
-        <a href="https://www.saude.pr.gov.br/Pagina/Licenciamento-Sanitario" target="_blank" className="bg-card p-7 rounded-md hover:shadow-refined transition-shadow flex items-center justify-between group border border-border border-l-2 border-l-primary gap-6">
-          <span className="text-foreground/90 text-sm md:text-base leading-relaxed flex-1">
-            Acesse o <span className="font-semibold text-primary">site oficial</span> da Secretaria de Estado da Saúde do Paraná (SESA) para conferir o acervo completo da legislação sanitária no Estado.
-          </span>
-          <div className="w-10 h-10 border border-border rounded-full flex items-center justify-center text-primary group-hover:border-accent group-hover:text-accent transition-colors shrink-0">
-            <ArrowRight className="w-4 h-4" />
-          </div>
-        </a>
-        <a href="https://www.bombeiros.pr.gov.br/PrevFogo/Pagina/Legislacao-de-Prevencao-e-Combate-Incendios-e-Desastres" target="_blank" rel="noopener noreferrer" className="bg-card p-7 rounded-md hover:shadow-refined transition-shadow flex items-center justify-between group border border-border border-l-2 border-l-primary gap-6">
-          <span className="text-foreground/90 text-sm md:text-base leading-relaxed flex-1">
-            Acesse o <span className="font-semibold text-primary">site oficial</span> do Corpo de Bombeiros Militar do Paraná (CBMPR) para conferir a legislação de prevenção e combate a incêndios e a desastres.
-          </span>
-          <div className="w-10 h-10 border border-border rounded-full flex items-center justify-center text-primary group-hover:border-accent group-hover:text-accent transition-colors shrink-0">
-            <ArrowRight className="w-4 h-4" />
-          </div>
-        </a>
-        <a href="https://prudentopolisprscp.equiplano.com.br:5028/tramitacaoProcesso/#/abertura-processo/entidade/41dd0a3a-f16f-4e8f-9b2a-8832e9191835/28" target="_blank" className="bg-card p-7 rounded-md hover:shadow-refined transition-shadow flex items-center gap-6 group border border-border border-l-2 border-l-primary">
-          <div className="w-10 h-10 border border-border rounded-full flex items-center justify-center text-primary group-hover:border-accent group-hover:text-accent transition-colors shrink-0">
-            <ArrowRight className="w-4 h-4" />
-          </div>
-          <span className="text-foreground/90 text-sm md:text-base leading-relaxed flex-1">
-            Empresas em <span className="font-semibold text-primary">Prudentópolis – PR</span>: solicite ou renove sua licença sanitária aqui.
-          </span>
-        </a>
+      <div className="pt-6 space-y-4">
+        <div className="flex items-center gap-4">
+          <p className="eyebrow whitespace-nowrap text-muted-foreground">De onde vêm as regras</p>
+          <div className="rule-hairline flex-1" />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <a
+            href="https://www.saude.pr.gov.br/Pagina/Licenciamento-Sanitario"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-card p-7 rounded-md border border-border hover:border-primary/40 hover:shadow-refined transition-all flex items-start justify-between gap-5 group"
+          >
+            <span className="space-y-1.5">
+              <span className="eyebrow block text-primary">SESA · Paraná</span>
+              <span className="block text-sm text-foreground/75 leading-relaxed">
+                Legislação sanitária do Estado, na fonte oficial da Secretaria de Saúde.
+              </span>
+            </span>
+            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+          </a>
+
+          <a
+            href="https://www.bombeiros.pr.gov.br/PrevFogo/Pagina/Legislacao-de-Prevencao-e-Combate-Incendios-e-Desastres"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-card p-7 rounded-md border border-border hover:border-risk-alto/40 hover:shadow-refined transition-all flex items-start justify-between gap-5 group"
+          >
+            <span className="space-y-1.5">
+              <span className="eyebrow block text-risk-alto">CBMPR</span>
+              <span className="block text-sm text-foreground/75 leading-relaxed">
+                Normas de prevenção e combate a incêndio, no site do Corpo de Bombeiros.
+              </span>
+            </span>
+            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-risk-alto transition-colors shrink-0 mt-1" />
+          </a>
+        </div>
+
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="item-1" className="border-none">
-            <AccordionTrigger className="bg-card p-7 rounded-md hover:shadow-refined transition-shadow flex items-center gap-6 group border border-border border-l-2 border-l-primary hover:no-underline">
-              <span className="text-foreground/90 text-sm md:text-base leading-relaxed flex-1 text-left">
-                Material para <span className="font-semibold text-primary">download</span>: manuais e orientações.
+            <AccordionTrigger className="bg-card px-7 py-6 rounded-md border border-border hover:border-primary/40 hover:no-underline transition-colors">
+              <span className="flex items-center gap-3 text-sm text-foreground/80">
+                <FileText className="w-4 h-4 text-primary shrink-0" strokeWidth={1.75} />
+                Manuais e orientações para download
               </span>
             </AccordionTrigger>
-            <AccordionContent className="p-4">
+            <AccordionContent className="pt-4">
               <MaterialsList />
             </AccordionContent>
           </AccordionItem>
@@ -310,22 +391,33 @@ function RiskClassificationMatrix() {
 
 function ContactSection() {
   return (
-    <div className="my-14 px-4 w-full">
-      <div className="max-w-3xl mx-auto">
-        <Card className="bg-card border border-border border-t-2 border-t-accent rounded-md p-10 md:p-14 shadow-refined space-y-10 text-center">
-          <p className="eyebrow text-muted-foreground">Fale conosco</p>
-          <div className="flex justify-center items-center">
-            <a href="https://wa.me/5542991038314" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group">
-              <div className="w-11 h-11 border border-border rounded-full flex items-center justify-center text-risk-baixo group-hover:border-risk-baixo transition-colors shrink-0">
-                <MessageCircle className="w-5 h-5" strokeWidth={1.75} />
-              </div>
-              <div className="text-left">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] mb-1">WhatsApp</p>
-                <p className="font-medium text-foreground text-base md:text-lg whitespace-nowrap">(42) 99103-8314</p>
-              </div>
-            </a>
+    <div className="hero-ink rounded-lg overflow-hidden">
+      <div className="px-8 py-14 md:px-16 md:py-20 grid gap-10 md:grid-cols-[1.4fr_1fr] md:items-center">
+        <div className="space-y-4">
+          <p className="eyebrow text-sinal">Atendimento</p>
+          <h2 className="font-display text-3xl md:text-[2.75rem] text-white leading-[1.05]">
+            Travou em alguma exigência?
+          </h2>
+          <p className="text-white/70 leading-relaxed max-w-md">
+            A consulta mostra o que a lei pede. Se o seu caso tiver uma particularidade — atividade
+            que não aparece, dúvida sobre a estrutura do ponto, exigência que você não entendeu —
+            chame no WhatsApp.
+          </p>
+        </div>
+        <a
+          href="https://wa.me/5542991038314"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-4 p-5 rounded-md bg-white/[0.06] border border-white/15 hover:bg-white/10 hover:border-sinal/50 transition-colors"
+        >
+          <div className="w-11 h-11 rounded-full bg-sinal/15 border border-sinal/30 flex items-center justify-center shrink-0">
+            <MessageCircle className="w-5 h-5 text-sinal" strokeWidth={1.75} />
           </div>
-        </Card>
+          <div>
+            <p className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.2em] mb-1">WhatsApp</p>
+            <p className="font-display text-lg text-white whitespace-nowrap">(42) 99103-8314</p>
+          </div>
+        </a>
       </div>
     </div>
   );
@@ -366,11 +458,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "Esta consulta substitui as licenças ou é um documento oficial?",
-    a: "Não. O AgilizaVISA é uma ferramenta informativa e gratuita, que orienta o empreendedor sobre as exigências previstas em lei. A licença sanitária, quando exigida, deve ser solicitada à Vigilância Sanitária do município onde a empresa está estabelecida; a licença de prevenção a incêndio, ao Corpo de Bombeiros Militar do Paraná."
+    a: "Não. O Agiliza é uma ferramenta informativa e gratuita, que orienta o empreendedor sobre as exigências previstas em lei. A licença sanitária, quando exigida, deve ser solicitada à Vigilância Sanitária do município onde a empresa está estabelecida; a licença de prevenção a incêndio, ao Corpo de Bombeiros Militar do Paraná."
   },
   {
     q: "Como solicito ou renovo a licença sanitária do meu estabelecimento?",
-    a: "Empresas localizadas em Prudentópolis-PR podem solicitar ou renovar a licença diretamente pelo link disponibilizado nesta página. Para outros municípios, procure a Vigilância Sanitária local."
+    a: "A licença sanitária é solicitada à Vigilância Sanitária do município onde a empresa está estabelecida; a de prevenção a incêndio, ao Corpo de Bombeiros Militar do Paraná. Cada município tem seu próprio canal de protocolo — procure o da sua cidade."
   }
 ];
 
@@ -494,97 +586,139 @@ export default function Home() {
       <TechBackground />
       <div className="max-w-6xl mx-auto px-4 py-14 md:py-24 space-y-14 relative z-10">
         {!data && (
-          <header className="text-center space-y-8">
-            <div className="flex flex-col items-center justify-center gap-5">
-              <div className="relative w-16 h-20 md:w-20 md:h-24 bulb-flicker">
-                <AgilizaMark className="w-full h-full" />
+          <header className="full-bleed hero-ink -mt-14 md:-mt-24 mb-4">
+            <div className="max-w-5xl mx-auto px-5 pt-12 pb-16 md:pt-16 md:pb-24">
+              <div className="flex items-center gap-3 rise-in" style={{ animationDelay: '40ms' }}>
+                <div className="relative w-8 h-10 bulb-flicker shrink-0">
+                  <AgilizaMark className="w-full h-full" />
+                </div>
+                <span className="font-display text-xl text-white tracking-tight">
+                  Agiliza<span className="text-sinal">.</span>
+                </span>
+                <span className="hidden sm:block ml-auto text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                  Licenciamento de empresas · Paraná
+                </span>
               </div>
-              <div className="space-y-3">
-                <h1 className="font-display text-5xl md:text-7xl text-foreground tracking-tight flex items-baseline justify-center gap-1">
-                  <span>Agiliza</span>
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">VISA</span>
+
+              <div className="mt-14 md:mt-20 max-w-3xl space-y-6">
+                <h1 className="headline-hero text-white rise-in" style={{ animationDelay: '120ms' }}>
+                  Quais licenças o seu estabelecimento precisa para funcionar no{' '}
+                  <span className="text-sinal">Paraná?</span>
                 </h1>
-                <div className="w-16 h-px bg-accent/50 mx-auto" />
+                <p className="text-fluid-subtitle text-white/65 leading-relaxed max-w-xl rise-in" style={{ animationDelay: '200ms' }}>
+                  Descubra aqui, em segundos. Informe o CNPJ e veja o que cada órgão exige do seu
+                  negócio — e o que não exige. Sem ir a repartição, sem decifrar lei.
+                </p>
               </div>
-            </div>
-            <div className="space-y-4 max-w-2xl mx-auto px-4">
-              <p className="eyebrow text-muted-foreground">Portal de licenciamento de empresas · Paraná</p>
-              <p className="text-fluid-subtitle text-muted-foreground leading-relaxed">
-                Informe o CNPJ e saiba o que a empresa precisa para funcionar: qual é a classificação de
-                risco sanitário da atividade e se ela exige licença da{' '}
-                <span className="text-foreground font-medium">Vigilância Sanitária</span> e do{' '}
-                <span className="text-foreground font-medium">Corpo de Bombeiros</span>.
-                Em breve, a consulta também dirá se é preciso alvará de localização.
-              </p>
+
+              <div className="mt-10 rise-in" style={{ animationDelay: '280ms' }}>
+                <Card className="p-6 md:p-8 bg-card border-0 rounded-lg shadow-lifted">
+                  {apiError && (
+                    <div className="mb-7 p-5 rounded-md border border-destructive/40 border-l-2 border-l-destructive bg-destructive/[0.06] flex items-start gap-4">
+                      <div className="p-2 border border-destructive/40 rounded-full shrink-0">
+                        <AlertTriangle className="w-4 h-4 text-destructive" strokeWidth={1.75} />
+                      </div>
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <p className="eyebrow text-destructive">Não foi possível consultar</p>
+                        <span className="error-text-technical">{apiError}</span>
+                      </div>
+                    </div>
+                  )}
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="cnpj" className="eyebrow block text-muted-foreground">
+                          CNPJ do negócio
+                        </Label>
+                        <Input
+                          id="cnpj"
+                          {...register('cnpj')}
+                          inputMode="numeric"
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            e.target.value = val;
+                            register('cnpj').onChange(e);
+                          }}
+                          placeholder="00.000.000/0000-00"
+                          className="h-16 text-xl md:text-2xl border border-input bg-background rounded-md font-mono font-medium text-foreground tracking-wider placeholder:text-muted-foreground/35 placeholder:font-normal"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isPending}
+                        className="h-16 md:mt-[1.6rem] px-8 bg-sinal text-ink rounded-md font-display text-base flex items-center justify-center gap-2.5 transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 shrink-0"
+                      >
+                        {isPending ? <Loader2 className="animate-spin w-5 h-5" /> : <Search className="w-4 h-4" strokeWidth={2.5} />}
+                        {isPending ? 'Consultando' : 'Consultar'}
+                      </button>
+                    </div>
+                    {errors.cnpj && <p className="text-destructive text-xs font-medium">{String(errors.cnpj.message)}</p>}
+                    <p className="text-[13px] text-muted-foreground leading-relaxed">
+                      Gratuito e sem cadastro. Os dados da empresa vêm da base pública da Receita Federal.
+                    </p>
+                  </form>
+                </Card>
+              </div>
+
+              <LampPanel acesa={isPending} className="mt-10 rise-in" />
             </div>
           </header>
         )}
 
-        <main className="max-w-3xl mx-auto w-full">
+        <main className={data ? 'max-w-3xl mx-auto w-full' : 'w-full'}>
           {!data ? (
-            <div className="space-y-14">
-              <Card className="p-8 md:p-16 bg-card border border-border rounded-md shadow-refined-lg overflow-hidden relative">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
-                {apiError && (
-                  <div className="mb-10 p-5 rounded-md border border-destructive/40 border-l-2 border-l-destructive bg-destructive/[0.06] flex items-start gap-4">
-                    <div className="p-2 border border-destructive/40 rounded-full shrink-0">
-                      <AlertTriangle className="w-4 h-4 text-destructive" strokeWidth={1.75} />
-                    </div>
-                    <div className="space-y-1.5 flex-1 min-w-0">
-                      <p className="eyebrow text-destructive">Não foi possível consultar</p>
-                      <span className="error-text-technical">{apiError}</span>
-                    </div>
+            <div>
+              <div className="px-4 pt-12 pb-16">
+                <div className="p-8 md:p-10 rounded-md bg-card border border-border border-l-2 border-l-sinal flex flex-col md:flex-row md:items-center gap-7">
+                  <div className="p-3 rounded-full bg-sinal/10 border border-sinal/25 shrink-0 w-fit">
+                    <Megaphone className="w-5 h-5 text-sinal" strokeWidth={1.75} />
                   </div>
-                )}
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
-                  <div className="space-y-5 text-center">
-                    <Label className="eyebrow block text-muted-foreground">
-                      Informe o CNPJ
-                    </Label>
-                    <p className="text-[13px] text-muted-foreground leading-relaxed max-w-md mx-auto">
-                      Uma única consulta responde pela Vigilância Sanitária e pelo Corpo de Bombeiros.
-                    </p>
-                    <div className="relative">
-                      <Input
-                        {...register('cnpj')}
-                        inputMode="numeric"
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          e.target.value = val;
-                          register('cnpj').onChange(e);
-                        }}
-                        placeholder="00.000.000/0000-00"
-                        className="h-16 md:h-20 text-xl md:text-3xl text-center border border-input bg-background rounded-md font-mono font-semibold text-primary tracking-wider shadow-inner placeholder:text-muted-foreground/40"
-                      />
-                    </div>
-                  </div>
-                  {errors.cnpj && <p className="text-destructive text-xs font-medium text-center">{String(errors.cnpj.message)}</p>}
-                  <button type="submit" disabled={isPending} className="w-full h-14 md:h-16 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md font-semibold text-[13px] md:text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-3 transition-all shadow-refined active:scale-[0.99] disabled:opacity-50">
-                    {isPending ? <Loader2 className="animate-spin w-5 h-5" /> : <Search className="w-4 h-4" />}
-                    Consultar Licenciamento
-                  </button>
-                </form>
-              </Card>
-
-              <LicensingScope />
-
-              <RiskClassificationMatrix />
-
-              <SimpleCnaeQuery />
-
-              <div className="bg-primary p-10 rounded-md flex flex-col md:flex-row items-center gap-8 shadow-refined-lg">
-                <div className="p-3.5 border border-primary-foreground/20 rounded-full shrink-0">
-                  <Megaphone className="w-7 h-7 text-primary-foreground" strokeWidth={1.5} />
-                </div>
-                <div className="space-y-1.5 text-center md:text-left">
-                  <h3 className="font-display text-xl md:text-2xl text-primary-foreground">Atenção, empreendedor</h3>
-                  <p className="text-primary-foreground/75 text-sm leading-relaxed">
-                    Mais de 900 atividades são dispensadas do licenciamento sanitário no Paraná — e essa
-                    dispensa não vale para o Corpo de Bombeiros, que segue regra própria.
+                  <p className="text-base md:text-lg text-foreground/85 leading-relaxed">
+                    Mais de <span className="font-display text-foreground">900 atividades</span> estão
+                    dispensadas do licenciamento sanitário no Paraná. Talvez a sua seja uma delas — e
+                    talvez ainda assim o Corpo de Bombeiros exija a dele, porque a regra é outra.
                   </p>
                 </div>
               </div>
-              <ContactSection />
+
+              {/* Tópico 1 — quem ainda não abriu a empresa não tem CNPJ para consultar,
+                  e é justamente quem mais precisa saber antes de assinar contrato. */}
+              <section className="full-bleed bg-secondary/60 border-y border-border py-16 md:py-24">
+                <div className="max-w-6xl mx-auto px-4 space-y-8">
+                  <div className="max-w-2xl space-y-4">
+                    <p className="eyebrow text-sinal">Ainda não abriu a empresa</p>
+                    <h2 className="font-display text-3xl md:text-[2.75rem] text-foreground leading-[1.05]">
+                      Consulte antes pelo código da atividade
+                    </h2>
+                    <p className="text-foreground/70 leading-relaxed">
+                      Sem CNPJ ainda? Informe o CNAE que você pretende registrar e veja o grau de risco
+                      da atividade antes de escolher o ponto, assinar o aluguel ou abrir a empresa.
+                    </p>
+                  </div>
+                  <SimpleCnaeQuery />
+                </div>
+              </section>
+
+              {/* Tópico 2 */}
+              <section className="py-16 md:py-24">
+                <LicensingScope />
+              </section>
+
+              {/* Tópico 3 */}
+              <section className="full-bleed bg-secondary/60 border-y border-border py-16 md:py-24">
+                <div className="max-w-6xl mx-auto px-4">
+                  <ComoFunciona />
+                </div>
+              </section>
+
+              {/* Tópico 4 */}
+              <section className="py-16 md:py-24">
+                <RiskClassificationMatrix />
+              </section>
+
+              <section className="pb-6">
+                <ContactSection />
+              </section>
             </div>
           ) : (
             <div className="space-y-8 animate-in fade-in duration-500">
@@ -918,9 +1052,18 @@ export default function Home() {
           )}
         </main>
         <FaqSection />
-        <footer className="text-center pt-14 border-t border-border pb-8 space-y-4">
-          <p className="text-[11px] text-muted-foreground tracking-wide">
-            O Agiliza Visa é um projeto desenvolvido sem qualquer finalidade comercial ou lucrativa.
+        <footer className="mt-20 pt-10 border-t border-border pb-10 flex flex-col md:flex-row md:items-center gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="relative w-6 h-7 shrink-0">
+              <AgilizaMark className="w-full h-full" />
+            </div>
+            <span className="font-display text-base text-foreground tracking-tight">
+              Agiliza<span className="text-sinal">.</span>
+            </span>
+          </div>
+          <p className="text-[12px] text-muted-foreground leading-relaxed md:max-w-xl md:ml-auto md:text-right">
+            Ferramenta informativa de orientação ao empreendedor. Não emite licença nem substitui
+            documento oficial: as licenças são solicitadas aos órgãos competentes.
           </p>
         </footer>
       </div>

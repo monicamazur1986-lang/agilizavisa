@@ -41,6 +41,12 @@
     --risk-medio: 32 90% 45%;
     --risk-alto: 0 72% 51%;
     --risk-condicionado: 217 91% 55%;
+
+    /* Topo profundo e a luz da marca: a lâmpada do logo é a ideia da página —
+       descobrir o que falta é acender a luz. */
+    --ink: 213 65% 11%;
+    --ink-soft: 213 45% 18%;
+    --sinal: 36 87% 56%;
   }
 }
 
@@ -61,11 +67,11 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* ---------- TIPOGRAFIA DE DESTAQUE (COMERCIAL) ---------- */
+/* ---------- TIPOGRAFIA DE DESTAQUE ---------- */
 .font-display {
-  font-family: var(--font-sans), ui-sans-serif, sans-serif;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 .eyebrow {
@@ -74,6 +80,24 @@ body {
   font-weight: 700;
   letter-spacing: 0.24em;
   text-transform: uppercase;
+}
+
+/* Manchete do topo: a pergunta que o empreendedor chega fazendo. */
+.headline-hero {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  font-size: clamp(2rem, 4.8vw, 3.5rem);
+}
+
+/* ---------- TOPO PROFUNDO ---------- */
+.hero-ink {
+  background-color: hsl(var(--ink));
+  background-image:
+    radial-gradient(ellipse 70% 55% at 50% -8%, hsl(var(--sinal) / 0.16) 0%, transparent 62%),
+    radial-gradient(ellipse 60% 50% at 88% 12%, hsl(var(--accent) / 0.2) 0%, transparent 58%),
+    radial-gradient(ellipse 55% 45% at 6% 92%, hsl(var(--primary) / 0.28) 0%, transparent 60%);
 }
 
 /* ---------- FUNDO TECNOLÓGICO CLARO ---------- */
@@ -105,6 +129,10 @@ body {
 .shadow-refined-lg {
   box-shadow: 0 2px 4px hsl(var(--foreground) / 0.04), 0 24px 48px -20px hsl(var(--foreground) / 0.22);
 }
+/* O cartão de consulta flutua sobre o topo escuro: é a peça iluminada da página. */
+.shadow-lifted {
+  box-shadow: 0 2px 6px hsl(213 65% 4% / 0.35), 0 32px 64px -24px hsl(213 65% 4% / 0.65);
+}
 
 /* ---------- RELATÓRIO TÉCNICO ---------- */
 .relatorio-tecnico {
@@ -114,7 +142,7 @@ body {
   letter-spacing: 0.01em;
 }
 
-/* O texto de erro fica sobre um fundo claro (bg-destructive/4%), por isso usa a
+/* O texto de erro fica sobre um fundo claro (bg-destructive/6%), por isso usa a
    cor destrutiva em si — nunca --destructive-foreground, que é quase branca e
    some no fundo. */
 .error-text-technical {
@@ -139,8 +167,8 @@ body {
 }
 .numbered-item::before {
   content: counter(item, decimal-leading-zero);
-  font-family: var(--font-sans), sans-serif;
-  font-weight: 800;
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
   font-size: 0.75rem;
   color: hsl(var(--accent));
   letter-spacing: 0.05em;
@@ -154,24 +182,74 @@ body {
 }
 
 .text-fluid-subtitle {
-  font-size: clamp(0.8125rem, 2vw, 0.9375rem);
+  font-size: clamp(0.9375rem, 2vw, 1.0625rem);
 }
 
 /* ---------- LÂMPADA PISCANDO SUAVEMENTE ---------- */
 @keyframes bulb-flicker {
   0%, 100% { opacity: 1; filter: drop-shadow(0 0 0 transparent); }
-  50% { opacity: 0.82; filter: drop-shadow(0 0 7px hsl(var(--accent) / 0.55)); }
+  50% { opacity: 0.82; filter: drop-shadow(0 0 7px hsl(var(--sinal) / 0.55)); }
 }
 .bulb-flicker {
   animation: bulb-flicker 3.4s ease-in-out infinite;
 }
 
+/* ---------- PAINEL DE LUZES ----------
+   A assinatura da página: cada licença é uma luz. Apagadas, elas dizem o que
+   ainda não se sabe; a consulta é o gesto que as acende. */
+.lamp {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: hsl(var(--sinal) / 0.22);
+  box-shadow: inset 0 0 0 1px hsl(var(--sinal) / 0.35);
+}
+.lamp-on {
+  background: hsl(var(--sinal));
+  box-shadow: 0 0 0 1px hsl(var(--sinal) / 0.5), 0 0 12px 1px hsl(var(--sinal) / 0.65);
+  animation: lamp-warm 620ms ease-out both;
+}
+@keyframes lamp-warm {
+  0% { background: hsl(var(--sinal) / 0.22); box-shadow: 0 0 0 0 transparent; }
+  60% { box-shadow: 0 0 0 1px hsl(var(--sinal) / 0.5), 0 0 18px 3px hsl(var(--sinal) / 0.8); }
+  100% { background: hsl(var(--sinal)); box-shadow: 0 0 0 1px hsl(var(--sinal) / 0.5), 0 0 12px 1px hsl(var(--sinal) / 0.65); }
+}
+
+/* Entrada do topo: o conteúdo sobe em cascata, uma peça por vez. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.rise-in {
+  animation: rise-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* ---------- FOCO REFINADO ---------- */
 ::selection {
-  background: hsl(var(--accent) / 0.25);
+  background: hsl(var(--sinal) / 0.3);
   color: hsl(var(--foreground));
+}
+
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--sinal));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .bulb-flicker, .rise-in, .lamp-on { animation: none !important; }
+  .lamp-on { background: hsl(var(--sinal)); box-shadow: 0 0 0 1px hsl(var(--sinal) / 0.5); }
 }
 
 @media print {
   .no-print { display: none !important; }
+}
+
+/* Sangra uma seção para a largura da janela de dentro de um container centrado.
+   O body já corta o eixo X, então a barra de rolagem não gera scroll lateral. */
+.full-bleed {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;
 }
