@@ -3,5 +3,6 @@
         "origin",
         "upstream",
         ""
-    ]
+    ],
+    "claudeCodeChat.permissions.yoloMode": false
 }

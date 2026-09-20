@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Flame, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, ShieldAlert, ClipboardCheck, Pencil } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { analyzeBombeiros } from '@/lib/bombeiros-analysis';
 import type { Cnae, BombeirosResult } from '@/lib/types';
 
@@ -361,15 +362,18 @@ export function BombeirosPanel({
           </div>
         )}
 
-        {/* Fundamentação do resultado */}
+        {/* Fundamentação do resultado — recolhida por padrão, mesmo critério dos demais
+            painéis: é justificativa, não a próxima ação do usuário. */}
         {result.reasons.length > 0 && (
-          <div className="p-6 bg-secondary/60 border border-border rounded-md">
-            <div className="flex items-start gap-4">
-              <div className="p-2 border border-border rounded-full shrink-0">
-                <HelpCircle className="w-4 h-4 text-primary" strokeWidth={1.75} />
-              </div>
-              <div className="space-y-2 flex-1">
-                <p className="eyebrow text-muted-foreground">Por que este enquadramento</p>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="motivos" className="border border-border rounded-md bg-secondary/60 overflow-hidden">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                <span className="flex items-center gap-3 text-sm text-foreground/80">
+                  <HelpCircle className="w-4 h-4 text-primary shrink-0" strokeWidth={1.75} />
+                  Por que este enquadramento ({result.reasons.length})
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-5">
                 <ul className="space-y-2">
                   {result.reasons.map((reason, i) => (
                     <li key={i} className="text-sm text-foreground/90 leading-snug flex gap-2">
@@ -378,9 +382,9 @@ export function BombeirosPanel({
                     </li>
                   ))}
                 </ul>
-              </div>
-            </div>
-          </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         )}
 
         <div className="pt-6 border-t border-border space-y-2">

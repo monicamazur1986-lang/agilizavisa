@@ -9,22 +9,26 @@
        com cores escuras sobre o layout claro. */
     color-scheme: light;
 
-    /* PALETA AGILIZA — AZUL CORPORATIVO, TECNOLÓGICO E CLARO */
-    --background: 212 28% 97%;
+    /* PALETA AGILIZA — DUAS CORES FAZEM O TRABALHO: O AZUL DA CONSULTA (SÓBRIO,
+       oficial) E O AMARELO DO SINAL (a luz que a lâmpada da marca acende quando
+       a resposta sai). Tudo o mais no sistema é neutro, para as duas realmente
+       se destacarem. --accent é o mesmo azul em um tom mais vivo, usado só onde
+       o --primary ficaria fraco demais (glow de fundo, foco de teclado). */
+    --background: 214 33% 97%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
-    --primary: 231 48% 48%;
+    --primary: 222 72% 42%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 212 30% 95%;
+    --secondary: 214 30% 95%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 212 25% 94%;
+    --muted: 214 25% 94%;
     --muted-foreground: 215 16% 42%;
 
-    --accent: 199 89% 48%;
+    --accent: 217 88% 52%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 72% 51%;
@@ -32,21 +36,23 @@
 
     --border: 214 32% 89%;
     --input: 214 32% 87%;
-    --ring: 199 89% 48%;
+    --ring: 217 88% 52%;
 
     --radius: 0.625rem;
 
-    /* Riscos — coloridos e nítidos */
+    /* Riscos — coloridos e nítidos, deliberadamente fora da dupla azul/amarelo
+       para nunca serem confundidos com marca ou ação. */
     --risk-baixo: 152 55% 32%;
-    --risk-medio: 32 90% 45%;
+    --risk-medio: 27 88% 42%;
     --risk-alto: 0 72% 51%;
     --risk-condicionado: 217 91% 55%;
 
     /* Topo profundo e a luz da marca: a lâmpada do logo é a ideia da página —
-       descobrir o que falta é acender a luz. */
+       descobrir o que falta é acender a luz. O amarelo é essa luz; por isso é a
+       única cor quente do sistema, e aparece só em ação (CTA, foco, a luz acesa). */
     --ink: 213 65% 11%;
     --ink-soft: 213 45% 18%;
-    --sinal: 36 87% 56%;
+    --sinal: 43 92% 52%;
   }
 }
 
@@ -91,23 +97,24 @@ body {
   font-size: clamp(2rem, 4.8vw, 3.5rem);
 }
 
-/* ---------- TOPO PROFUNDO ---------- */
+/* ---------- TOPO PROFUNDO ----------
+   Minimalista de propósito: um único brilho azul de fundo e um único brilho
+   dourado atrás do título — o resto do topo fica limpo, sem camadas extras. */
 .hero-ink {
   background-color: hsl(var(--ink));
   background-image:
-    radial-gradient(ellipse 70% 55% at 50% -8%, hsl(var(--sinal) / 0.16) 0%, transparent 62%),
-    radial-gradient(ellipse 60% 50% at 88% 12%, hsl(var(--accent) / 0.2) 0%, transparent 58%),
-    radial-gradient(ellipse 55% 45% at 6% 92%, hsl(var(--primary) / 0.28) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 50% at 82% 0%, hsl(var(--sinal) / 0.13) 0%, transparent 58%),
+    radial-gradient(ellipse 65% 55% at 8% 100%, hsl(var(--accent) / 0.22) 0%, transparent 60%);
 }
 
-/* ---------- FUNDO TECNOLÓGICO CLARO ---------- */
+/* ---------- FUNDO CLARO ----------
+   Dois brilhos discretos, nos cantos opostos, na própria dupla azul/amarelo da
+   marca — troca as quatro manchas de ciano/índigo por um fundo quase liso. */
 .tech-bg-light {
   background-color: hsl(var(--background));
   background-image:
-    radial-gradient(circle at 10% 8%, hsl(var(--accent) / 0.16) 0%, transparent 34%),
-    radial-gradient(circle at 90% 4%, hsl(var(--primary) / 0.14) 0%, transparent 30%),
-    radial-gradient(circle at 96% 92%, hsl(var(--accent) / 0.14) 0%, transparent 32%),
-    radial-gradient(circle at 2% 88%, hsl(var(--primary) / 0.12) 0%, transparent 30%);
+    radial-gradient(circle at 92% 2%, hsl(var(--accent) / 0.1) 0%, transparent 32%),
+    radial-gradient(circle at 4% 96%, hsl(var(--sinal) / 0.08) 0%, transparent 30%);
 }
 
 /* ---------- FILETES / DIVISORES ---------- */

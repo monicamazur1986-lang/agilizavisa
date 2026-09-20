@@ -9,18 +9,25 @@ import { useState, useTransition, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Search, RotateCcw, Loader2, ArrowRight, Megaphone, MessageCircle, FileText, AlertTriangle, AlertCircle, CheckCircle2, HelpCircle, ShieldCheck, Flame, Building2 } from 'lucide-react';
+import { Search, RotateCcw, Loader2, ArrowRight, MessageCircle, FileText, AlertTriangle, ShieldCheck, Flame, Building2, Leaf, BadgeCheck } from 'lucide-react';
 import { fetchCnpjData } from './actions';
-import { analyzeRisk, resolveCnaeRisk } from '@/lib/risk-analysis';
-import { RiskBadge, RiskIcon } from '@/components/risk-components';
+import { analyzeRisk } from '@/lib/risk-analysis';
+import { analyzeBombeiros } from '@/lib/bombeiros-analysis';
+import { analyzeAlvara } from '@/lib/alvara-analysis';
+import { analyzeAmbiental } from '@/lib/ambiental-analysis';
+import { analyzePcpr } from '@/lib/pcpr-analysis';
+import { RiskIcon } from '@/components/risk-components';
 import { Card } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { MaterialsList } from '@/components/MaterialsList';
 import { SimpleCnaeQuery } from '@/components/SimpleCnaeQuery';
+import { VisaPanel } from '@/components/VisaPanel';
 import { BombeirosPanel } from '@/components/BombeirosPanel';
+import { AlvaraPanel } from '@/components/AlvaraPanel';
+import { AmbientalPanel } from '@/components/AmbientalPanel';
+import { PcprPanel } from '@/components/PcprPanel';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import type { CompanyData, RiskAnalysisResult } from '@/lib/types';
@@ -43,9 +50,12 @@ function AgilizaMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 100 122" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="agilizaMarkGrad" x1="8" y1="8" x2="92" y2="118" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="hsl(199, 89%, 48%)" />
-          <stop offset="1" stopColor="hsl(231, 48%, 48%)" />
+        {/* A luz acende no alto (dourado) e assenta num traço azul embaixo — o
+            mesmo par de cores do resto da marca, na própria lâmpada. */}
+        <linearGradient id="agilizaMarkGrad" x1="50" y1="8" x2="50" y2="118" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="hsl(var(--sinal))" />
+          <stop offset="0.55" stopColor="hsl(var(--accent))" />
+          <stop offset="1" stopColor="hsl(var(--primary))" />
         </linearGradient>
       </defs>
       <path
@@ -89,75 +99,14 @@ const RISK_THEMES: Record<string, RiskThemeDef> = {
   'NÃO ENCONTRADO': { textClass: 'text-muted-foreground', borderClass: 'border-border', borderSoftClass: 'border-border', bgTintClass: 'bg-muted', label: 'Atividade Não Localizada' },
 };
 
-const PORTE_THEMES: Record<string, { text: string; bg: string; border: string; icon: any; }> = {
-  'Porte III': {
-    text: 'text-risk-alto',
-    bg: 'bg-risk-alto/10',
-    border: 'border-risk-alto/25',
-    icon: AlertTriangle
-  },
-  'Porte II e III': {
-    text: 'text-risk-medio',
-    bg: 'bg-risk-medio/10',
-    border: 'border-risk-medio/25',
-    icon: AlertCircle
-  },
-  'Porte I, II e III': {
-    text: 'text-risk-baixo',
-    bg: 'bg-risk-baixo/10',
-    border: 'border-risk-baixo/25',
-    icon: CheckCircle2
-  }
-};
-
-const getPorteTheme = (porte?: string) => {
-  if (!porte) return PORTE_THEMES['Porte I, II e III'];
-  return PORTE_THEMES[porte] || PORTE_THEMES['Porte I, II e III'];
-};
-
-/**
- * Traduz o nível de risco sanitário na resposta objetiva que o empresário procura:
- * precisa ou não da licença. O nível técnico (Nível I/II/III) continua exibido acima,
- * mas sozinho ele não responde a pergunta prática.
- */
-const VISA_VEREDITOS: Record<string, { headline: string; detail: string; icon: any }> = {
-  'BAIXO': {
-    headline: 'Dispensada de licença sanitária',
-    detail: 'O estabelecimento pode iniciar as operações sem licenciamento prévio, observadas as normas sanitárias vigentes.',
-    icon: CheckCircle2,
-  },
-  'MEDIO': {
-    headline: 'Exige licença sanitária',
-    detail: 'Emissão simplificada, sem inspeção prévia: as operações podem começar logo após o licenciamento.',
-    icon: AlertCircle,
-  },
-  'ALTO': {
-    headline: 'Exige licença sanitária',
-    detail: 'Com inspeção sanitária e/ou análise documental prévias ao início das atividades.',
-    icon: AlertTriangle,
-  },
-  'CONDICIONADO': {
-    headline: 'Depende das respostas abaixo',
-    detail: 'Responda ao questionário no detalhamento CNAE para definir a exigência.',
-    icon: HelpCircle,
-  },
-  'NÃO ENCONTRADO': {
-    headline: 'Consulte a Vigilância Sanitária municipal',
-    detail: 'Atividade não localizada no rol oficial: o enquadramento precisa ser individualizado.',
-    icon: HelpCircle,
-  },
-};
-
-const getVisaVeredito = (level?: string) => (level ? VISA_VEREDITOS[level] : undefined);
-
 /**
  * A assinatura da página. A marca do portal é uma lâmpada, então cada licença é uma
  * luz: apagadas, dizem o que ainda não se sabe sobre o negócio; a consulta acende.
  */
 function LampPanel({ acesa = false, className = '' }: { acesa?: boolean; className?: string }) {
-  const LUZES = ['Vigilância Sanitária', 'Corpo de Bombeiros', 'Alvará de localização'];
+  const LUZES = ['Vigilância Sanitária', 'Corpo de Bombeiros', 'Alvará de Funcionamento', 'Ambiental', 'Polícia Civil'];
   return (
-    <div className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-7 ${className}`}>
+    <div className={`flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-x-6 sm:gap-y-3 ${className}`}>
       {LUZES.map((luz, i) => (
         <div key={luz} className="flex items-center gap-2.5">
           {/* Durante a consulta as luzes acendem em sequência: é a espera virando resposta. */}
@@ -168,7 +117,6 @@ function LampPanel({ acesa = false, className = '' }: { acesa?: boolean; classNa
           />
           <span className={`text-[11px] font-medium uppercase tracking-[0.16em] transition-colors ${acesa ? 'text-white/80' : 'text-white/45'}`}>
             {luz}
-            {i === 2 && <span className="text-white/25"> · em breve</span>}
           </span>
         </div>
       ))}
@@ -218,173 +166,311 @@ function ComoFunciona() {
 }
 
 /**
- * As frentes de licenciamento cobertas pelo portal. O alvará de localização ainda
- * não está implementado e aparece marcado como "em breve" — nunca como consulta ativa.
+ * As cinco frentes de licenciamento que incidem sobre uma empresa no Paraná, em três
+ * graus de determinação: vigilância, bombeiros e alvará têm anexo legal indexado por
+ * CNAE e devolvem veredito; a Polícia Civil tem lista fechada por descrição de atividade,
+ * então a ponte pelo CNAE é curadoria, mas a lei fixa documento, taxa e vistoria; a
+ * ambiental não tem lista nenhuma por atividade, e só admite orientação.
  */
-const LICENSING_TRACKS = [
+const LICENCAS = [
   {
+    id: 'VISA',
     icon: ShieldCheck,
+    eyebrow: 'Vigilância Sanitária',
+    resumo: 'Licença sanitária, emitida pelo município',
     accentText: 'text-primary',
     accentBorder: 'border-t-primary',
     accentTint: 'bg-primary/10',
-    eyebrow: 'Vigilância Sanitária',
-    title: 'A empresa precisa de licença sanitária?',
-    description:
-      'Classificação de risco de cada CNAE, porte de fiscalização do município e exigência de projeto, pela Resolução SESA nº 1.034/2020 e pelo Decreto Estadual nº 10.590/2025.',
+    accentRing: 'border-primary',
     status: null as string | null,
+    base: 'Resolução SESA nº 1.034/2020 · Decreto Estadual nº 10.590/2025',
+    comoFuncionaTitulo: 'Como funciona a classificação de risco',
+    comoFunciona: [
+      'Mais de 900 atividades estão dispensadas do licenciamento sanitário no Paraná. Talvez a sua seja uma delas — e talvez ainda assim o Corpo de Bombeiros exija a dele, porque a regra é outra.',
+      'Na frente sanitária, o nível de exigência para funcionar sai da classificação de risco da atividade, conforme a Resolução SESA nº 1.034/2020 e o Decreto Estadual nº 10.590/2025, do Paraná.',
+      'A consulta também mostra o porte de fiscalização do município (I, II ou III), que indica qual município tem competência para fiscalizar aquela atividade, e se há exigência de Projeto Básico de Arquitetura (PBA) aprovado antes de abrir.',
+    ],
+    ondePedirTitulo: 'De onde vêm as regras',
+    ondePedir: [
+      {
+        texto: 'Legislação sanitária do Estado, na fonte oficial da Secretaria de Saúde.',
+        href: 'https://www.saude.pr.gov.br/Pagina/Licenciamento-Sanitario',
+        rotulo: 'SESA · Paraná',
+      },
+    ],
   },
   {
+    id: 'CBMPR',
     icon: Flame,
+    eyebrow: 'Corpo de Bombeiros',
+    resumo: 'Licenciamento de prevenção a incêndio',
     accentText: 'text-risk-alto',
     accentBorder: 'border-t-risk-alto',
     accentTint: 'bg-risk-alto/10',
-    eyebrow: 'Corpo de Bombeiros',
-    title: 'A empresa precisa de licença do CBMPR?',
-    description:
-      'Enquadramento nos anexos da Portaria do Comando-Geral nº 476/2025 e as perguntas que definem se o estabelecimento é dispensado ou obrigado ao licenciamento.',
+    accentRing: 'border-risk-alto',
     status: null as string | null,
+    base: 'Portaria do Comando-Geral do CBMPR nº 476/2025',
+    comoFunciona: [
+      'Aqui o CNAE sozinho quase nunca decide. A atividade pode constar do Anexo A da Portaria — o que a torna passível de baixo risco —, mas a dispensa só vale se forem atendidas, ao mesmo tempo, as oito condições do art. 3º, VII: área e pavimento, saída para a rua, lotação, público atendido, GLP, inflamáveis e produtos perigosos.',
+      'Há ainda hipóteses de dispensa que independem do CNAE (art. 3º, I a VI), como atividade exercida na própria residência sem atendimento ao público, endereço apenas fiscal, atividade exclusivamente virtual ou ambulante. E o Anexo B lista as atividades de alto risco, que sempre exigem licenciamento.',
+    ],
+    ondePedir: [
+      {
+        texto: 'Solicitação, renovação e acompanhamento do licenciamento pelo sistema oficial do CBMPR.',
+        href: 'https://protegefacil.paas.pr.gov.br/',
+        rotulo: 'Protege Fácil · solicitar licenciamento',
+      },
+      {
+        texto: 'Normas de prevenção e combate a incêndio, no site do Corpo de Bombeiros.',
+        href: 'https://www.bombeiros.pr.gov.br/PrevFogo/Pagina/Legislacao-de-Prevencao-e-Combate-Incendios-e-Desastres',
+        rotulo: 'CBMPR · legislação',
+      },
+    ],
   },
   {
+    id: 'ALVARA',
     icon: Building2,
-    accentText: 'text-muted-foreground',
-    accentBorder: 'border-t-border',
-    accentTint: 'bg-muted',
-    eyebrow: 'Prefeitura',
-    title: 'Alvará de localização e funcionamento',
-    description:
-      'A verificação da exigência de alvará municipal está em desenvolvimento e passará a sair na mesma consulta, junto das demais licenças.',
-    status: 'Em breve',
+    eyebrow: 'Alvará de Funcionamento',
+    resumo: 'Alvará da prefeitura, com rito simplificado',
+    accentText: 'text-risk-condicionado',
+    accentBorder: 'border-t-risk-condicionado',
+    accentTint: 'bg-risk-condicionado/10',
+    accentRing: 'border-risk-condicionado',
+    status: null as string | null,
+    base: 'Decreto Estadual nº 11.063/2025, que atualiza o Anexo Único do Decreto Estadual nº 3.434/2023',
+    comoFuncionaTitulo: 'Como funciona o enquadramento simplificado',
+    comoFunciona: [
+      'O Anexo Único do decreto lista 975 atividades como de baixo risco. Estar nessa lista não dispensa o alvará: libera a emissão simplificada e automática, sem vistoria prévia. O alvará continua sendo solicitado.',
+      'Cada atividade da lista carrega suas próprias condições — por exemplo, ser exclusivamente artesanal, não gerar efluentes industriais, ter até dez funcionários ou estar em área com rede pública de esgoto. Se uma única condição não for atendida, a atividade sai do rito simplificado e segue o processo padrão.',
+    ],
+    ondePedirTitulo: 'De onde vêm as regras',
+    ondePedir: [
+      {
+        texto: 'O alvará é emitido pela prefeitura do município onde a empresa está instalada. A classificação de risco é estadual; a emissão, municipal.',
+        href: null,
+        rotulo: null,
+      },
+      {
+        texto: 'Abertura de empresa, consulta de viabilidade e licenciamento integrado no portal de empresas do Estado.',
+        href: 'https://www.empresafacil.pr.gov.br',
+        rotulo: 'Empresa Fácil Paraná',
+      },
+    ],
+  },
+  {
+    id: 'AMBIENTAL',
+    icon: Leaf,
+    eyebrow: 'Licenciamento Ambiental',
+    resumo: 'IAT ou município, conforme o impacto',
+    accentText: 'text-risk-baixo',
+    accentBorder: 'border-t-risk-baixo',
+    accentTint: 'bg-risk-baixo/10',
+    accentRing: 'border-risk-baixo',
+    status: 'Orientação',
+    base: 'Resolução CEMA nº 110/2021 · normas específicas por tipologia do IAT',
+    comoFunciona: [
+      'Esta é a única das cinco frentes que não pode ser respondida pelo código da atividade: a norma ambiental não classifica por CNAE, e sim por tipologia descrita em texto e por porte medido em unidades físicas — metros quadrados, litros por dia, número de funcionários, cabeças de gado, megawatts.',
+      'A competência também se divide. Atividades de impacto local podem ser licenciadas pelo próprio município, quando habilitado para isso; as demais ficam com o Instituto Água e Terra. E quase toda atividade tem ressalvas de localização: área de preservação permanente, reserva legal, manancial e área cárstica costumam afastar o rito mais simples.',
+      'Por isso, aqui o Agiliza orienta em vez de decidir: diz se a atividade costuma exigir licenciamento, monta a lista do que o órgão vai pedir e indica a qual órgão recorrer — mas não afirma enquadramento. Oficina mecânica, lavanderia, lava-rápido, padaria, açougue, restaurante, supermercado, hospedagem e comércio de GLP estão entre as que costumam exigir licença.',
+    ],
+    ondePedir: [
+      {
+        texto: 'Tipologias, normas por atividade e formulários do órgão ambiental estadual.',
+        href: 'https://www.iat.pr.gov.br/Pagina/Licenciamento-de-atividades-especificas',
+        rotulo: 'IAT · licenciamento de atividades',
+      },
+      {
+        texto: 'Se a atividade for de impacto local e o município for habilitado, o pedido vai para o órgão ambiental da própria prefeitura.',
+        href: null,
+        rotulo: null,
+      },
+    ],
+  },
+  {
+    id: 'PCPR',
+    icon: BadgeCheck,
+    eyebrow: 'Licença da Polícia Civil',
+    resumo: 'Atividades de interesse da segurança pública',
+    accentText: 'text-primary',
+    accentBorder: 'border-t-primary',
+    accentTint: 'bg-primary/10',
+    accentRing: 'border-primary',
+    status: null as string | null,
+    base: 'Lei Estadual nº 20.936/2021, alterada pela Lei nº 22.754/2025',
+    comoFuncionaTitulo: 'Como funciona a licença da Polícia Civil',
+    comoFunciona: [
+      'É a licença mais esquecida das cinco, e a que mais surpreende quem já abriu o negócio. Ela não trata de higiene, de incêndio nem de meio ambiente: trata de atividades que interessam à segurança pública — produtos controlados de um lado, e de outro um conjunto de negócios comuns que a lei considera sensíveis.',
+      'A lista é fechada e numerada no Anexo Único da lei. Nela estão hotel, motel, pensão, oficina mecânica e funilaria, loja e estacionamento de veículos, locadora, chaveiro, joalheria, instalador de alarmes, boate, cinema, academia de artes marciais, extração de madeira e, desde fevereiro de 2026, o comércio de resíduos e sucatas metálicas.',
+      'Duas regras pegam o pequeno negócio de surpresa. A primeira: o cadastro na Polícia Civil precisa ser feito ANTES de começar a funcionar, e operar sem a licença custa multa de 100% da taxa. A segunda: o MEI é isento do pagamento, mas não da licença — a isenção derruba o valor, não a obrigação.',
+    ],
+    ondePedirTitulo: 'De onde vêm as regras',
+    ondePedir: [
+      {
+        texto: 'Produtos controlados, armas, munições e explosivos são tratados pela delegacia especializada, que também orienta sobre o cadastro e a vistoria.',
+        href: 'https://www.policiacivil.pr.gov.br/Pagina/Explosivos-Armas-e-Municoes',
+        rotulo: 'Polícia Civil · produtos controlados',
+      },
+      {
+        texto: 'As atividades do grupo 3 do Anexo — hospedagem, veículos, joias, chaveiro, diversão — são atendidas pela delegacia de polícia da circunscrição do estabelecimento.',
+        href: null,
+        rotulo: null,
+      },
+    ],
   },
 ];
 
-function LicensingScope() {
+/**
+ * Painel das cinco licenças. Os cartões funcionam como menu: abrem, um por vez, a
+ * explicação da frente correspondente — o que substitui as antigas seções separadas de
+ * "o que você descobre" e de classificação de risco sanitário, que diziam a mesma coisa
+ * em dois lugares distantes da página.
+ */
+function LicencasPanorama() {
+  const [aberta, setAberta] = useState<string | null>(null);
+  const licencaAberta = LICENCAS.find((l) => l.id === aberta) || null;
+
   return (
     <div className="px-4 space-y-10">
       <div className="max-w-2xl space-y-4">
-        <p className="eyebrow text-sinal">O que você descobre</p>
+        <p className="eyebrow text-sinal">Licenciamento no Paraná</p>
         <h2 className="font-display text-3xl md:text-[2.75rem] text-foreground leading-[1.05]">
-          Um CNPJ, todas as licenças
+          Cinco licenças, uma consulta
         </h2>
         <p className="text-foreground/70 leading-relaxed">
           Cada órgão decide por conta própria, e a dispensa de um não vale para o outro. É por isso
-          que tanta gente abre a empresa achando que está tudo certo e descobre a pendência na fiscalização.
+          que tanta gente abre a empresa achando que está tudo certo e descobre a pendência na
+          fiscalização. Toque em cada licença para entender como ela funciona e onde solicitá-la.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {LICENSING_TRACKS.map((track) => {
-          const TrackIcon = track.icon;
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {LICENCAS.map((licenca) => {
+          const LicencaIcon = licenca.icon;
+          const ativa = aberta === licenca.id;
           return (
-            <div
-              key={track.eyebrow}
-              className={`bg-card p-8 rounded-md border border-border border-t-2 ${track.accentBorder} flex flex-col gap-5`}
+            <button
+              key={licenca.id}
+              type="button"
+              onClick={() => setAberta(ativa ? null : licenca.id)}
+              aria-expanded={ativa}
+              className={`text-left bg-card p-7 rounded-md border border-border border-t-2 ${licenca.accentBorder} flex flex-col gap-4 transition-all hover:shadow-refined ${ativa ? `ring-1 ${licenca.accentRing} shadow-refined` : ''}`}
             >
               <div className="flex items-center justify-between gap-3">
-                <div className={`p-2.5 rounded-full ${track.accentTint} border border-border shrink-0`}>
-                  <TrackIcon className={`w-4 h-4 ${track.accentText}`} strokeWidth={1.75} />
+                <div className={`p-2.5 rounded-full ${licenca.accentTint} border border-border shrink-0`}>
+                  <LicencaIcon className={`w-4 h-4 ${licenca.accentText}`} strokeWidth={1.75} />
                 </div>
-                {track.status && (
+                {licenca.status && (
                   <span className="px-3 py-1 rounded-sm border border-border bg-secondary text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {track.status}
+                    {licenca.status}
                   </span>
                 )}
               </div>
-              <div className="space-y-2.5 flex-1">
-                <p className={`eyebrow ${track.accentText}`}>{track.eyebrow}</p>
-                <p className="font-display text-lg text-foreground leading-tight">{track.title}</p>
-                <p className="text-[13px] text-foreground/65 leading-relaxed">{track.description}</p>
+              <div className="space-y-1.5 flex-1">
+                <p className={`eyebrow ${licenca.accentText}`}>{licenca.eyebrow}</p>
+                <p className="text-[13px] text-foreground/65 leading-relaxed">{licenca.resumo}</p>
               </div>
-            </div>
+              <span className={`text-[11px] font-semibold uppercase tracking-wider ${ativa ? licenca.accentText : 'text-muted-foreground'}`}>
+                {ativa ? 'Fechar' : 'Como funciona'}
+              </span>
+            </button>
           );
         })}
       </div>
-    </div>
-  );
-}
 
-function RiskClassificationMatrix() {
-  return (
-    <div className="mt-14 mb-20 px-4 space-y-10">
-      <div className="text-center space-y-4 max-w-2xl mx-auto">
-        <p className="eyebrow text-primary">Vigilância Sanitária</p>
-        <h2 className="font-display text-3xl md:text-4xl text-foreground tracking-tight">
-          Como funciona a classificação de risco
-        </h2>
-        <p className="text-muted-foreground leading-relaxed">
-          Na frente sanitária, o nível de exigência para funcionar sai da classificação de risco da atividade,
-          conforme a Resolução SESA nº 1.034/2020 e o Decreto Estadual nº 10.590/2025, do Paraná.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Object.entries(RISK_THEMES).filter(([key]) => key !== 'NÃO ENCONTRADO').map(([key, theme]) => (
-          <div key={key} className={`${theme.bgTintClass} rounded-md p-7 flex flex-col gap-3 border ${theme.borderSoftClass} border-t-2 ${theme.borderClass}`}>
-            <div className="flex items-center gap-2.5">
-              <RiskIcon level={key} className="w-4 h-4" />
-              <span className={`font-display text-base ${theme.textClass}`}>{theme.label}</span>
-            </div>
-            <p className="text-[13px] text-foreground/70 leading-relaxed flex-grow">
-              {key === 'BAIXO' && "Atividade econômica dispensada de licenciamento sanitário para funcionamento."}
-              {key === 'MEDIO' && "Licença sanitária emitida de forma simplificada, sem inspeção prévia."}
-              {key === 'ALTO' && "Exige inspeção sanitária e análise documental prévia à operação."}
-              {key === 'CONDICIONADO' && "Definido após respostas a questionário específico sobre a atividade."}
-            </p>
+      {licencaAberta && (
+        <div
+          className={`bg-card rounded-md border border-border border-t-2 ${licencaAberta.accentBorder} p-8 md:p-10 space-y-8 animate-in fade-in duration-300`}
+        >
+          <div className="space-y-2">
+            <p className={`eyebrow ${licencaAberta.accentText}`}>{licencaAberta.eyebrow}</p>
+            <h3 className="font-display text-2xl md:text-3xl text-foreground tracking-tight">
+              {licencaAberta.comoFuncionaTitulo || 'Como funciona'}
+            </h3>
           </div>
-        ))}
-      </div>
 
-      <div className="pt-6 space-y-4">
-        <div className="flex items-center gap-4">
-          <p className="eyebrow whitespace-nowrap text-muted-foreground">De onde vêm as regras</p>
-          <div className="rule-hairline flex-1" />
+          <div className="space-y-4 max-w-3xl">
+            {licencaAberta.comoFunciona.map((paragrafo, i) => (
+              <p key={i} className="text-sm md:text-base text-foreground/85 leading-relaxed">
+                {paragrafo}
+              </p>
+            ))}
+          </div>
+
+          {/* Os quatro graus de risco só existem na frente sanitária. */}
+          {licencaAberta.id === 'VISA' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Object.entries(RISK_THEMES)
+                .filter(([key]) => key !== 'NÃO ENCONTRADO')
+                .map(([key, theme]) => (
+                  <div
+                    key={key}
+                    className={`${theme.bgTintClass} rounded-md p-6 flex flex-col gap-2.5 border ${theme.borderSoftClass} border-t-2 ${theme.borderClass}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <RiskIcon level={key} className="w-4 h-4" />
+                      <span className={`font-display text-base ${theme.textClass}`}>{theme.label}</span>
+                    </div>
+                    <p className="text-[13px] text-foreground/70 leading-relaxed">
+                      {key === 'BAIXO' && 'Atividade econômica dispensada de licenciamento sanitário para funcionamento.'}
+                      {key === 'MEDIO' && 'Licença sanitária emitida de forma simplificada, sem inspeção prévia.'}
+                      {key === 'ALTO' && 'Exige inspeção sanitária e análise documental prévia à operação.'}
+                      {key === 'CONDICIONADO' && 'Definido após respostas a questionário específico sobre a atividade.'}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <p className="eyebrow whitespace-nowrap text-muted-foreground">{licencaAberta.ondePedirTitulo || 'Onde solicitar'}</p>
+              <div className="rule-hairline flex-1" />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {licencaAberta.ondePedir.map((item, i) =>
+                item.href ? (
+                  <a
+                    key={i}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-secondary/50 p-6 rounded-md border border-border hover:border-primary/40 hover:shadow-refined transition-all flex items-start justify-between gap-5 group"
+                  >
+                    <span className="space-y-1.5">
+                      <span className={`eyebrow block ${licencaAberta.accentText}`}>{item.rotulo}</span>
+                      <span className="block text-sm text-foreground/75 leading-relaxed">{item.texto}</span>
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+                  </a>
+                ) : (
+                  <div key={i} className="bg-secondary/50 p-6 rounded-md border border-border">
+                    <p className="text-sm text-foreground/75 leading-relaxed">{item.texto}</p>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground leading-relaxed pt-2 border-t border-border">
+            Base legal: {licencaAberta.base}.
+          </p>
         </div>
+      )}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <a
-            href="https://www.saude.pr.gov.br/Pagina/Licenciamento-Sanitario"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-card p-7 rounded-md border border-border hover:border-primary/40 hover:shadow-refined transition-all flex items-start justify-between gap-5 group"
-          >
-            <span className="space-y-1.5">
-              <span className="eyebrow block text-primary">SESA · Paraná</span>
-              <span className="block text-sm text-foreground/75 leading-relaxed">
-                Legislação sanitária do Estado, na fonte oficial da Secretaria de Saúde.
-              </span>
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="materiais" className="border-none">
+          <AccordionTrigger className="bg-card px-7 py-6 rounded-md border border-border hover:border-primary/40 hover:no-underline transition-colors">
+            <span className="flex items-center gap-3 text-sm text-foreground/80">
+              <FileText className="w-4 h-4 text-primary shrink-0" strokeWidth={1.75} />
+              Manuais e orientações para download
             </span>
-            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
-          </a>
-
-          <a
-            href="https://www.bombeiros.pr.gov.br/PrevFogo/Pagina/Legislacao-de-Prevencao-e-Combate-Incendios-e-Desastres"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-card p-7 rounded-md border border-border hover:border-risk-alto/40 hover:shadow-refined transition-all flex items-start justify-between gap-5 group"
-          >
-            <span className="space-y-1.5">
-              <span className="eyebrow block text-risk-alto">CBMPR</span>
-              <span className="block text-sm text-foreground/75 leading-relaxed">
-                Normas de prevenção e combate a incêndio, no site do Corpo de Bombeiros.
-              </span>
-            </span>
-            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-risk-alto transition-colors shrink-0 mt-1" />
-          </a>
-        </div>
-
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="item-1" className="border-none">
-            <AccordionTrigger className="bg-card px-7 py-6 rounded-md border border-border hover:border-primary/40 hover:no-underline transition-colors">
-              <span className="flex items-center gap-3 text-sm text-foreground/80">
-                <FileText className="w-4 h-4 text-primary shrink-0" strokeWidth={1.75} />
-                Manuais e orientações para download
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-4">
-              <MaterialsList />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-4">
+            <MaterialsList />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }
@@ -399,9 +485,10 @@ function ContactSection() {
             Travou em alguma exigência?
           </h2>
           <p className="text-white/70 leading-relaxed max-w-md">
-            A consulta mostra o que a lei pede. Se o seu caso tiver uma particularidade — atividade
-            que não aparece, dúvida sobre a estrutura do ponto, exigência que você não entendeu —
-            chame no WhatsApp.
+            A consulta mostra o que a lei pede. Isto não é consultoria: não acompanhamos o processo
+            de licenciamento nem avaliamos o caso da sua empresa. O WhatsApp é para apontar problema
+            na ferramenta — atividade que não aparece, classificação que parece errada, exigência que
+            ficou confusa.
           </p>
         </div>
         <a
@@ -426,15 +513,15 @@ function ContactSection() {
 const FAQ_ITEMS = [
   {
     q: "O que o portal consulta a partir do CNPJ?",
-    a: "Duas frentes de licenciamento, hoje: a da Vigilância Sanitária, com a classificação de risco de cada CNAE da empresa, o porte de fiscalização e as exigências de projeto; e a do Corpo de Bombeiros Militar do Paraná, com o enquadramento nos anexos da Portaria do Comando-Geral nº 476/2025. A consulta ao alvará de localização e funcionamento do município está em desenvolvimento e será incorporada à mesma tela."
+    a: "Cinco frentes de licenciamento: a da Vigilância Sanitária, com a classificação de risco de cada CNAE da empresa, o porte de fiscalização e as exigências de projeto; a do Corpo de Bombeiros Militar do Paraná, com o enquadramento nos anexos da Portaria do Comando-Geral nº 476/2025; a do Alvará de Funcionamento, com o enquadramento no Anexo Único do Decreto Estadual nº 11.063/2025, que define quando a emissão pode ser simplificada e automática, sem vistoria prévia; a do Licenciamento Ambiental, que orienta sobre a exigência conforme a tipologia da atividade; e a da Polícia Civil, com o enquadramento no Anexo Único da Lei Estadual nº 20.936/2021."
   },
   {
     q: "A dispensa da Vigilância Sanitária vale para o Corpo de Bombeiros?",
     a: "Não. São licenciamentos independentes, com bases legais e critérios diferentes. Uma atividade pode ser dispensada pela Vigilância Sanitária e ainda assim exigir licença do Corpo de Bombeiros, ou o contrário. Por isso o resultado de cada órgão aparece em sua própria coluna. Vale lembrar que, mesmo dispensado do licenciamento, o estabelecimento continua obrigado a manter as medidas de prevenção e combate a incêndio."
   },
   {
-    q: "Quando o alvará de localização entra na consulta?",
-    a: "A funcionalidade está em desenvolvimento e ainda não tem data de publicação. Até lá, o alvará de localização e funcionamento deve ser tratado diretamente com a prefeitura do município onde a empresa está estabelecida."
+    q: "Como funciona a consulta ao Alvará de Funcionamento?",
+    a: "A classificação vem de um decreto estadual — o Decreto nº 11.063/2025, que atualiza o Anexo Único do Decreto nº 3.434/2023 —, mas o alvará em si é sempre emitido pela prefeitura do município onde a empresa está estabelecida. Estar no Anexo Único e atender cumulativamente às condições listadas para a atividade libera a emissão sem vistoria prévia, por via simplificada e automática; fora do Anexo, ou com alguma condição não atendida, o alvará segue o processo padrão do município."
   },
   {
     q: "O que significa cada nível de risco (Baixo, Médio, Alto e Condicionado)?",
@@ -499,6 +586,44 @@ function FaqSection() {
   );
 }
 
+/**
+ * O menu das cinco licenças no relatório por CNPJ — mesmo padrão da busca por CNAE
+ * avulso. As cores repetem exatamente as do painel "Cinco licenças, uma consulta" na
+ * home (LICENCAS): a mesma frente tem a mesma cor em toda a página, acesa mesmo com o
+ * menu fechado — não só no estado selecionado — para o menu não ficar todo cinza.
+ */
+const ORGAO_MENUS = [
+  { id: 'VISA', Icon: ShieldCheck, label: 'Vigilância Sanitária', text: 'text-primary', border: 'border-t-primary', tint: 'bg-primary/10', ring: 'border-primary' },
+  { id: 'CBMPR', Icon: Flame, label: 'Corpo de Bombeiros', text: 'text-risk-alto', border: 'border-t-risk-alto', tint: 'bg-risk-alto/10', ring: 'border-risk-alto' },
+  { id: 'ALVARA', Icon: Building2, label: 'Alvará de Funcionamento', text: 'text-risk-condicionado', border: 'border-t-risk-condicionado', tint: 'bg-risk-condicionado/10', ring: 'border-risk-condicionado' },
+  { id: 'AMBIENTAL', Icon: Leaf, label: 'Licenciamento Ambiental', text: 'text-risk-baixo', border: 'border-t-risk-baixo', tint: 'bg-risk-baixo/10', ring: 'border-risk-baixo' },
+  { id: 'PCPR', Icon: BadgeCheck, label: 'Polícia Civil', text: 'text-primary', border: 'border-t-primary', tint: 'bg-primary/10', ring: 'border-primary' },
+] as const;
+
+/** Cor do pontinho de status em cada botão do menu — um resumo antes de abrir. */
+function dotVisa(level?: string): string {
+  if (level === 'BAIXO') return 'bg-risk-baixo';
+  if (level === 'MEDIO') return 'bg-risk-medio';
+  if (level === 'ALTO') return 'bg-risk-alto';
+  if (level === 'CONDICIONADO') return 'bg-risk-condicionado';
+  return 'bg-muted-foreground/30';
+}
+function dotBombeiro(level?: string): string {
+  if (level === 'ALTO') return 'bg-risk-alto';
+  if (level === 'MEDIO') return 'bg-risk-medio';
+  if (level === 'BAIXO') return 'bg-risk-baixo';
+  if (level === 'PENDENTE') return 'bg-primary';
+  return 'bg-muted-foreground/30';
+}
+function dotAlvara(level?: string): string {
+  if (level === 'BAIXO') return 'bg-risk-baixo';
+  if (level === 'PADRAO') return 'bg-risk-medio';
+  return 'bg-muted-foreground/30';
+}
+function dotSinal(sinal?: string): string {
+  return sinal === 'PROVAVEL' ? 'bg-risk-baixo' : 'bg-muted-foreground/30';
+}
+
 export default function Home() {
   const db = useFirestore();
   const [data, setData] = useState<CompanyData | null>(null);
@@ -506,12 +631,18 @@ export default function Home() {
   // As perguntas do CBMPR são sobre o estabelecimento como um todo, não por CNAE,
   // por isso ficam em um estado próprio, com chaves globais.
   const [bombeirosAnswers, setBombeirosAnswers] = useState<Record<string, string>>({});
-  // Os dois licenciamentos se alternam: só um fica aberto por vez. A consulta começa
-  // pela Vigilância Sanitária, e a do CBMPR só aparece quando acionada.
-  const [orgaoAtivo, setOrgaoAtivo] = useState<'VISA' | 'CBMPR'>('VISA');
-  // A consulta ao CBMPR só acontece com o aceite explícito do usuário; quem recusa
-  // recolhe o convite, que fica reduzido a uma linha reabrível.
-  const [bombeirosDispensado, setBombeirosDispensado] = useState(false);
+  // O Alvará autodeclara por CNAE: cada condição do Anexo Único é respondida por
+  // atividade, então as chaves combinam o CNAE com o índice da condição.
+  const [alvaraAnswers, setAlvaraAnswers] = useState<Record<string, string>>({});
+  // A ambiental não autodeclara enquadramento: as três respostas apenas montam o
+  // checklist e indicam o órgão provável, então bastam chaves globais.
+  const [ambientalAnswers, setAmbientalAnswers] = useState<Record<string, string>>({});
+  // A Polícia Civil pergunta sobre produto controlado e sobre MEI — as duas são sobre o
+  // estabelecimento como um todo, não por CNAE, então bastam chaves globais.
+  const [pcprAnswers, setPcprAnswers] = useState<Record<string, string>>({});
+  // As cinco licenças chegam recolhidas: o usuário escolhe qual abrir, e só uma
+  // fica aberta por vez — o mesmo menu usado na busca avulsa por CNAE.
+  const [orgaoAtivo, setOrgaoAtivo] = useState<'VISA' | 'CBMPR' | 'ALVARA' | 'AMBIENTAL' | 'PCPR' | null>(null);
   const painelRef = useRef<HTMLDivElement | null>(null);
   const [isPending, startTransition] = useTransition();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -527,11 +658,24 @@ export default function Home() {
   });
 
   const result: RiskAnalysisResult | null = data ? analyzeRisk(data.cnaes || [], answers) : null;
-  const currentTheme = result?.level ? (RISK_THEMES[result.level] || RISK_THEMES['NÃO ENCONTRADO']) : RISK_THEMES['NÃO ENCONTRADO'];
+  // Calculados aqui só para o pontinho de status de cada botão do menu — o conteúdo
+  // completo de cada frente é computado de novo dentro do próprio painel quando abre.
+  const bombeirosResult = data ? analyzeBombeiros(data.cnaes || [], bombeirosAnswers) : null;
+  const alvaraResult = data ? analyzeAlvara(data.cnaes || [], alvaraAnswers) : null;
+  const ambientalResult = data ? analyzeAmbiental(data.cnaes || [], ambientalAnswers) : null;
+  const pcprResult = data ? analyzePcpr(data.cnaes || [], pcprAnswers) : null;
 
-  /** Troca o órgão em exibição: um encerra e o outro executa, nunca os dois juntos. */
-  const alternarOrgao = (destino: 'VISA' | 'CBMPR') => {
-    setOrgaoAtivo(destino);
+  const ORGAO_DOTS: Record<string, string> = {
+    VISA: dotVisa(result?.level),
+    CBMPR: dotBombeiro(bombeirosResult?.level),
+    ALVARA: dotAlvara(alvaraResult?.level),
+    AMBIENTAL: dotSinal(ambientalResult?.sinal),
+    PCPR: dotSinal(pcprResult?.sinal),
+  };
+
+  /** Abre a licença escolhida; tocar na que já está aberta recolhe de volta ao menu. */
+  const alternarOrgao = (destino: 'VISA' | 'CBMPR' | 'ALVARA' | 'AMBIENTAL' | 'PCPR') => {
+    setOrgaoAtivo((prev) => (prev === destino ? null : destino));
     // Sem isso, quem aciona no rodapé de um painel longo cai no meio do painel seguinte.
     requestAnimationFrame(() => {
       painelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -542,8 +686,10 @@ export default function Home() {
     setData(null);
     setAnswers({});
     setBombeirosAnswers({});
-    setOrgaoAtivo('VISA');
-    setBombeirosDispensado(false);
+    setAlvaraAnswers({});
+    setAmbientalAnswers({});
+    setPcprAnswers({});
+    setOrgaoAtivo(null);
     setApiError(null);
     reset();
     if (typeof window !== 'undefined') {
@@ -556,8 +702,10 @@ export default function Home() {
     setApiError(null);
     setAnswers({});
     setBombeirosAnswers({});
-    setOrgaoAtivo('VISA');
-    setBombeirosDispensado(false);
+    setAlvaraAnswers({});
+    setAmbientalAnswers({});
+    setPcprAnswers({});
+    setOrgaoAtivo(null);
 
     startTransition(async () => {
       try {
@@ -588,16 +736,18 @@ export default function Home() {
         {!data && (
           <header className="full-bleed hero-ink -mt-14 md:-mt-24 mb-4">
             <div className="max-w-5xl mx-auto px-5 pt-12 pb-16 md:pt-16 md:pb-24">
-              <div className="flex items-center gap-3 rise-in" style={{ animationDelay: '40ms' }}>
-                <div className="relative w-8 h-10 bulb-flicker shrink-0">
+              <div className="flex items-center gap-3.5 rise-in" style={{ animationDelay: '40ms' }}>
+                <div className="relative w-9 h-11 bulb-flicker shrink-0">
                   <AgilizaMark className="w-full h-full" />
                 </div>
-                <span className="font-display text-xl text-white tracking-tight">
-                  Agiliza<span className="text-sinal">.</span>
-                </span>
-                <span className="hidden sm:block ml-auto text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
-                  Licenciamento de empresas · Paraná
-                </span>
+                <div className="leading-none">
+                  <span className="font-display text-2xl md:text-[1.75rem] text-white tracking-tight">
+                    Agiliza<span className="text-sinal">.</span>
+                  </span>
+                  <p className="mt-1 text-[10px] md:text-[11px] font-medium uppercase tracking-[0.16em] text-white/55">
+                    Portal de licenciamento de empresas · Paraná
+                  </p>
+                </div>
               </div>
 
               <div className="mt-14 md:mt-20 max-w-3xl space-y-6">
@@ -668,40 +818,34 @@ export default function Home() {
         <main className={data ? 'max-w-3xl mx-auto w-full' : 'w-full'}>
           {!data ? (
             <div>
-              <div className="px-4 pt-12 pb-16">
-                <div className="p-8 md:p-10 rounded-md bg-card border border-border border-l-2 border-l-sinal flex flex-col md:flex-row md:items-center gap-7">
-                  <div className="p-3 rounded-full bg-sinal/10 border border-sinal/25 shrink-0 w-fit">
-                    <Megaphone className="w-5 h-5 text-sinal" strokeWidth={1.75} />
-                  </div>
-                  <p className="text-base md:text-lg text-foreground/85 leading-relaxed">
-                    Mais de <span className="font-display text-foreground">900 atividades</span> estão
-                    dispensadas do licenciamento sanitário no Paraná. Talvez a sua seja uma delas — e
-                    talvez ainda assim o Corpo de Bombeiros exija a dele, porque a regra é outra.
-                  </p>
-                </div>
-              </div>
-
               {/* Tópico 1 — quem ainda não abriu a empresa não tem CNPJ para consultar,
-                  e é justamente quem mais precisa saber antes de assinar contrato. */}
-              <section className="full-bleed bg-secondary/60 border-y border-border py-16 md:py-24">
+                  e é justamente quem mais precisa saber antes de assinar contrato. Faixa
+                  na cor do sinal (a mesma do botão de consulta e da lâmpada), pra não se
+                  confundir visualmente com a faixa neutra de "Como funciona" logo abaixo. */}
+              <section className="full-bleed bg-sinal/[0.06] border-y border-sinal/25 py-16 md:py-24">
                 <div className="max-w-6xl mx-auto px-4 space-y-8">
                   <div className="max-w-2xl space-y-4">
-                    <p className="eyebrow text-sinal">Ainda não abriu a empresa</p>
+                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-card border border-sinal/30 shadow-refined">
+                      <Search className="w-3.5 h-3.5 text-sinal" strokeWidth={2} />
+                      <p className="eyebrow text-sinal">Ainda não abriu a empresa</p>
+                    </div>
                     <h2 className="font-display text-3xl md:text-[2.75rem] text-foreground leading-[1.05]">
-                      Consulte antes pelo código da atividade
+                      Consulte antes pelo <span className="text-sinal">código da atividade</span>
                     </h2>
                     <p className="text-foreground/70 leading-relaxed">
-                      Sem CNPJ ainda? Informe o CNAE que você pretende registrar e veja o grau de risco
-                      da atividade antes de escolher o ponto, assinar o aluguel ou abrir a empresa.
+                      Sem CNPJ ainda? Informe o CNAE que você pretende registrar e abra, em um único menu
+                      por vez, o que a Vigilância Sanitária, o Corpo de Bombeiros, o Alvará de
+                      Funcionamento, o licenciamento ambiental e a Polícia Civil exigem da atividade —
+                      antes de escolher o ponto, assinar o aluguel ou abrir a empresa.
                     </p>
                   </div>
                   <SimpleCnaeQuery />
                 </div>
               </section>
 
-              {/* Tópico 2 */}
+              {/* Tópico 2 — as cinco licenças, cada uma abrindo sua própria explicação. */}
               <section className="py-16 md:py-24">
-                <LicensingScope />
+                <LicencasPanorama />
               </section>
 
               {/* Tópico 3 */}
@@ -711,18 +855,13 @@ export default function Home() {
                 </div>
               </section>
 
-              {/* Tópico 4 */}
-              <section className="py-16 md:py-24">
-                <RiskClassificationMatrix />
-              </section>
-
               <section className="pb-6">
                 <ContactSection />
               </section>
             </div>
           ) : (
             <div className="space-y-8 animate-in fade-in duration-500">
-              {/* Cabeçalho comum: identifica a empresa e abre o relatório dos dois licenciamentos. */}
+              {/* Cabeçalho comum: identifica a empresa e abre o relatório das cinco frentes de licenciamento. */}
               <Card className="overflow-hidden border border-border bg-card rounded-md shadow-refined-lg">
                 <div className="py-10 px-6 md:px-10 text-center space-y-4">
                   <p className="eyebrow text-muted-foreground">Relatório de Licenciamento</p>
@@ -731,7 +870,7 @@ export default function Home() {
                     <p className="text-primary font-mono text-sm md:text-lg font-medium tracking-widest">{data.cnpj}</p>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto pt-2">
-                    Os dois licenciamentos exigidos no Paraná são avaliados de forma independente:
+                    As cinco frentes de licenciamento exigidas no Paraná são avaliadas de forma independente:
                     uma atividade pode ser dispensada por um órgão e exigida pelo outro.
                   </p>
 
@@ -753,210 +892,50 @@ export default function Home() {
                 </div>
               </Card>
 
-              {/* Um órgão de cada vez: o painel ativo ocupa a tela inteira e a troca
-                  se dá pelos botões de acionamento abaixo de cada resultado. */}
-              <div ref={painelRef} className="scroll-mt-6 space-y-8">
-                {orgaoAtivo === 'VISA' ? (
-                <Card className={`overflow-hidden border border-border border-t-2 ${currentTheme.borderClass} bg-card rounded-md shadow-refined-lg animate-in fade-in duration-300`}>
-                  <div className={`${currentTheme.bgTintClass} py-10 px-6 text-center border-b border-border`}>
-                    <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 mb-5 rounded-full bg-card border ${currentTheme.borderSoftClass} shadow-refined`}>
-                      <ShieldCheck className={`w-[18px] h-[18px] ${currentTheme.textClass}`} strokeWidth={2} />
-                      <span className={`text-[13px] md:text-sm font-bold uppercase tracking-[0.16em] ${currentTheme.textClass}`}>
-                        Vigilância Sanitária
-                      </span>
-                    </div>
-                    <h3 className={`font-display text-3xl md:text-4xl ${currentTheme.textClass} tracking-tight`}>
-                      {result?.level === 'CONDICIONADO' ? 'Risco Condicionado' :
-                       result?.level === 'NÃO ENCONTRADO' ? 'Atividade Não Localizada' :
-                       currentTheme.label}
-                    </h3>
-
-                    {/* Veredito objetivo, em paridade com o painel do Corpo de Bombeiros. */}
-                    {result && (() => {
-                      const v = getVisaVeredito(result.level);
-                      if (!v) return null;
-                      const VIcon = v.icon;
-                      return (
-                        <div className="mt-4 space-y-1.5">
-                          <div className="flex items-center justify-center gap-2.5">
-                            <VIcon className={`w-[18px] h-[18px] ${currentTheme.textClass} shrink-0`} strokeWidth={2} />
-                            <p className={`text-base md:text-lg font-semibold ${currentTheme.textClass} leading-snug`}>
-                              {v.headline}
-                            </p>
-                          </div>
-                          <p className="text-[13px] text-foreground/70 leading-snug max-w-sm mx-auto">{v.detail}</p>
+              {/* As cinco licenças chegam recolhidas neste menu — a mesma interação da
+                  busca avulsa por CNAE — e só uma abre por vez, abaixo dos botões. */}
+              <div ref={painelRef} className="scroll-mt-6 space-y-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {ORGAO_MENUS.map(({ id, Icon, label, text, border, tint, ring }) => {
+                    const isOpen = orgaoAtivo === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => alternarOrgao(id)}
+                        aria-expanded={isOpen}
+                        className={`relative flex flex-col items-center gap-2 p-4 rounded-md border border-border border-t-2 ${border} bg-card text-center transition-all hover:shadow-refined ${
+                          isOpen ? `${tint} ring-1 ${ring} shadow-refined` : ''
+                        }`}
+                      >
+                        <span className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ${ORGAO_DOTS[id]}`} />
+                        <div className={`p-2 rounded-full ${tint} border border-border`}>
+                          <Icon className={`w-4 h-4 ${text}`} strokeWidth={1.75} />
                         </div>
-                      );
-                    })()}
-
-                    {result?.porte && (
-                      <div className={`mt-6 inline-flex p-3 px-4 rounded-sm border items-center justify-center gap-2.5 ${getPorteTheme(result.porte).bg} ${getPorteTheme(result.porte).border}`}>
-                        {(() => {
-                          const ThemeIcon = getPorteTheme(result.porte).icon;
-                          return <ThemeIcon className={`w-4 h-4 ${getPorteTheme(result.porte).text}`} strokeWidth={1.75} />;
-                        })()}
-                        <p className={`text-[11px] font-semibold ${getPorteTheme(result.porte).text} uppercase tracking-[0.15em]`}>
-                          Responsabilidade Fiscal: {result.porte}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-6 md:p-8 space-y-10">
-
-                  {result && (
-                    <div className="relatorio-tecnico bg-secondary/60 p-6 md:p-10 rounded-md border border-border text-foreground/85 text-sm md:text-base">
-                      {result.message.split(' ').map((word, i) =>
-                        word === 'DISPENSADA' || word === 'SIMPLIFICADA' || word === 'INSPEÇÃO' ?
-                        <span key={i} className="font-semibold text-primary">{word} </span> : word + ' '
-                      )}
-                    </div>
-                  )}
-
-                  {result?.requiresPba && (
-                    <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-4">
-                      <div className="flex items-start gap-4">
-                        <div className="p-2 border border-border rounded-full shrink-0">
-                          <AlertTriangle className="w-4 h-4 text-destructive" strokeWidth={1.75} />
-                        </div>
-                        <div className="space-y-2 flex-1">
-                          <p className="eyebrow text-muted-foreground">Exigência de Projeto Básico de Arquitetura (PBA)</p>
-                          <p className="text-sm md:text-base text-foreground/90 leading-snug">
-                            Esta atividade está sujeita à aprovação prévia de Projeto Básico de Arquitetura pela Vigilância Sanitária, antes do início das operações e nas renovações da licença, conforme o art. 9º da Resolução SESA nº 1.034/2020. A dispensa dessa aprovação, quando aplicável, não isenta o estabelecimento de construir e manter a estrutura física nos termos da legislação vigente.
-                          </p>
-                          {result.pbaNotes.length > 0 && (
-                            <ul className="space-y-1.5 pt-1">
-                              {result.pbaNotes.map((note, i) => (
-                                <li key={i} className="text-[13px] text-muted-foreground leading-relaxed flex gap-2">
-                                  <span className="text-destructive">•</span> {note}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {result?.specialProjectNotes && result.specialProjectNotes.length > 0 && (
-                    <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-4">
-                      <div className="flex items-start gap-4">
-                        <div className="p-2 border border-border rounded-full shrink-0">
-                          <AlertCircle className="w-4 h-4 text-primary" strokeWidth={1.75} />
-                        </div>
-                        <div className="space-y-2 flex-1">
-                          <p className="eyebrow text-muted-foreground">Exigência de Projeto Específico</p>
-                          <ul className="space-y-1.5">
-                            {result.specialProjectNotes.map((note, i) => (
-                              <li key={i} className="text-sm text-foreground/90 leading-snug flex gap-2">
-                                <span className="text-primary">•</span> {note}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {result?.porteNotes && result.porteNotes.length > 0 && (
-                    <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-4">
-                      <div className="flex items-start gap-4">
-                        <div className="p-2 border border-border rounded-full shrink-0">
-                          <HelpCircle className="w-4 h-4 text-primary" strokeWidth={1.75} />
-                        </div>
-                        <div className="space-y-2 flex-1">
-                          <p className="eyebrow text-muted-foreground">Observação sobre o Porte de Fiscalização</p>
-                          <ul className="space-y-1.5">
-                            {result.porteNotes.map((note, i) => (
-                              <li key={i} className="text-sm text-foreground/90 leading-snug flex gap-2">
-                                <span className="text-primary">•</span> {note}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {result?.baixoRiscoNotes && result.baixoRiscoNotes.length > 0 && (
-                    <div className="p-7 bg-secondary/60 border border-border rounded-md space-y-4">
-                      <div className="flex items-start gap-4">
-                        <div className="p-2 border border-border rounded-full shrink-0">
-                          <HelpCircle className="w-4 h-4 text-primary" strokeWidth={1.75} />
-                        </div>
-                        <div className="space-y-2 flex-1">
-                          <p className="eyebrow text-muted-foreground">Nota sobre Baixo Risco (Decreto Estadual nº 10.590/2025)</p>
-                          <ul className="space-y-1.5">
-                            {result.baixoRiscoNotes.map((note, i) => (
-                              <li key={i} className="text-sm text-foreground/90 leading-snug flex gap-2">
-                                <span className="text-primary">•</span> {note}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                       <h4 className="eyebrow whitespace-nowrap text-muted-foreground">Detalhamento CNAE</h4>
-                       <div className="rule-hairline flex-1"></div>
-                    </div>
-                    <div className="numbered-list divide-y divide-border border-t border-border">
-                      {(data.cnaes || []).map((c, idx) => {
-                        const cnaeRes = resolveCnaeRisk(c.code, answers);
-                        const cnaeTheme = RISK_THEMES[cnaeRes.risk] || RISK_THEMES['NÃO ENCONTRADO'];
-                        return (
-                          <div key={`${c.code}-${idx}`} className="numbered-item py-7 flex gap-4">
-                            <div className="flex-1 min-w-0 space-y-5">
-                              <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
-                                <div className="space-y-2 flex-1 min-w-0">
-                                  <code className="text-[11px] font-medium text-primary bg-secondary px-2.5 py-1 rounded-sm">{c.code}</code>
-                                  <p className="text-sm md:text-base text-foreground/90 leading-snug">{c.description}</p>
-                                  {cnaeRes.porte && (
-                                    <div className={`mt-2 p-2.5 px-3.5 rounded-sm border inline-flex items-center gap-2.5 w-fit ${getPorteTheme(cnaeRes.porte).bg} ${getPorteTheme(cnaeRes.porte).border}`}>
-                                      {(() => {
-                                        const ThemeIcon = getPorteTheme(cnaeRes.porte).icon;
-                                        return <ThemeIcon className={`w-3.5 h-3.5 ${getPorteTheme(cnaeRes.porte).text}`} strokeWidth={1.75} />;
-                                      })()}
-                                      <p className={`text-[10px] font-medium ${getPorteTheme(cnaeRes.porte).text} uppercase tracking-wider`}>
-                                        Fiscalização: {cnaeRes.porte}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex md:justify-end shrink-0">
-                                  <RiskBadge level={cnaeRes.risk} />
-                                </div>
-                              </div>
-
-                              {cnaeRes.risk === 'CONDICIONADO' && cnaeRes.path && (
-                                <div className="p-6 bg-secondary/60 rounded-sm space-y-5 border border-border border-l-2 border-l-risk-condicionado">
-                                  <div className="space-y-1.5">
-                                    <p className="eyebrow text-risk-condicionado">Responda para definir o risco</p>
-                                    <p className="text-sm text-foreground/90 leading-snug">{cnaeRes.question}</p>
-                                  </div>
-                                  <RadioGroup value={answers[cnaeRes.path] || ""} onValueChange={(v) => setAnswers(prev => ({ ...prev, [cnaeRes.path!]: v }))} className="flex flex-wrap gap-3">
-                                    <div className="flex items-center space-x-3 bg-card px-6 py-3 rounded-md border border-border hover:border-primary transition-colors">
-                                      <RadioGroupItem value="Sim" id={`${cnaeRes.path}-sim`} className="h-4 w-4 border-primary" />
-                                      <Label htmlFor={`${cnaeRes.path}-sim`} className="text-foreground text-sm cursor-pointer">Sim</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3 bg-card px-6 py-3 rounded-md border border-border hover:border-primary transition-colors">
-                                      <RadioGroupItem value="Não" id={`${cnaeRes.path}-nao`} className="h-4 w-4 border-primary" />
-                                      <Label htmlFor={`${cnaeRes.path}-nao`} className="text-foreground text-sm cursor-pointer">Não</Label>
-                                    </div>
-                                  </RadioGroup>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                      );
-                      })}
-                    </div>
-                  </div>
+                        <span className={`text-[11px] font-semibold uppercase tracking-wider leading-tight ${isOpen ? text : 'text-foreground/80'}`}>
+                          {label}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-              </Card>
-                ) : (
+
+                {!orgaoAtivo && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Toque em uma licença acima para ver o resultado.
+                  </p>
+                )}
+
+                {orgaoAtivo === 'VISA' && (
+                  <div className="animate-in fade-in duration-300">
+                    <VisaPanel
+                      cnaes={data.cnaes || []}
+                      answers={answers}
+                      onAnswer={(id, value) => setAnswers(prev => ({ ...prev, [id]: value }))}
+                    />
+                  </div>
+                )}
+                {orgaoAtivo === 'CBMPR' && (
                   <div className="animate-in fade-in duration-300">
                     <BombeirosPanel
                       cnaes={data.cnaes || []}
@@ -965,79 +944,31 @@ export default function Home() {
                     />
                   </div>
                 )}
-
-                {/* Acionamento do outro licenciamento: encerra o painel atual e abre o outro. */}
-                {orgaoAtivo === 'VISA' ? (
-                  !bombeirosDispensado ? (
-                    <div className="p-7 md:p-8 bg-card border border-border border-l-2 border-l-risk-alto rounded-md space-y-6">
-                      <div className="flex flex-col md:flex-row md:items-start gap-5">
-                        <div className="p-2.5 bg-risk-alto/10 border border-border rounded-full shrink-0 w-fit">
-                          <Flame className="w-4 h-4 text-risk-alto" strokeWidth={1.75} />
-                        </div>
-                        <div className="space-y-2 flex-1">
-                          <p className="eyebrow text-risk-alto">Corpo de Bombeiros</p>
-                          <p className="text-base md:text-lg font-medium text-foreground/90 leading-snug">
-                            Deseja consultar a licença do Corpo de Bombeiros?
-                          </p>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            É um licenciamento independente do sanitário, com regra própria: a dispensa da
-                            Vigilância Sanitária não vale para o Corpo de Bombeiros. A consulta abre no lugar
-                            deste resultado, e você volta a ele quando quiser.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-3 md:pl-16">
-                        <button
-                          type="button"
-                          onClick={() => alternarOrgao('CBMPR')}
-                          className="h-12 px-7 rounded-md bg-risk-alto text-primary-foreground text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center gap-2.5 transition-all hover:opacity-90 active:scale-[0.99]"
-                        >
-                          <Flame className="w-3.5 h-3.5" strokeWidth={2} />
-                          Sim, consultar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setBombeirosDispensado(true)}
-                          className="h-12 px-7 rounded-md border border-border text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center transition-colors hover:border-primary hover:text-primary"
-                        >
-                          Agora não
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-6 bg-secondary/40 border border-border rounded-md flex flex-col sm:flex-row sm:items-center gap-4">
-                      <p className="text-[13px] text-muted-foreground leading-relaxed flex-1">
-                        A consulta ao Corpo de Bombeiros não foi realizada.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setBombeirosDispensado(false)}
-                        className="h-11 px-6 rounded-md border border-border text-risk-alto text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center gap-2.5 transition-colors hover:border-risk-alto shrink-0"
-                      >
-                        <Flame className="w-3.5 h-3.5" strokeWidth={2} />
-                        Consultar agora
-                      </button>
-                    </div>
-                  )
-                ) : (
-                  <div className="p-7 md:p-8 bg-card border border-border border-l-2 border-l-primary rounded-md flex flex-col md:flex-row md:items-center gap-6">
-                    <div className="p-2.5 bg-primary/10 border border-border rounded-full shrink-0 w-fit">
-                      <ShieldCheck className="w-4 h-4 text-primary" strokeWidth={1.75} />
-                    </div>
-                    <div className="space-y-1.5 flex-1">
-                      <p className="eyebrow text-primary">Vigilância Sanitária</p>
-                      <p className="text-sm text-foreground/80 leading-relaxed">
-                        O resultado sanitário continua guardado, com as respostas que você já deu.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => alternarOrgao('VISA')}
-                      className="h-12 px-7 rounded-md bg-primary text-primary-foreground text-[11px] font-semibold uppercase tracking-[0.15em] flex items-center justify-center gap-2.5 transition-all hover:bg-primary/90 active:scale-[0.99] shrink-0"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5" strokeWidth={2} />
-                      Voltar à Vigilância
-                    </button>
+                {orgaoAtivo === 'ALVARA' && (
+                  <div className="animate-in fade-in duration-300">
+                    <AlvaraPanel
+                      cnaes={data.cnaes || []}
+                      answers={alvaraAnswers}
+                      onAnswer={(id, value) => setAlvaraAnswers(prev => ({ ...prev, [id]: value }))}
+                    />
+                  </div>
+                )}
+                {orgaoAtivo === 'AMBIENTAL' && (
+                  <div className="animate-in fade-in duration-300">
+                    <AmbientalPanel
+                      cnaes={data.cnaes || []}
+                      answers={ambientalAnswers}
+                      onAnswer={(id, value) => setAmbientalAnswers(prev => ({ ...prev, [id]: value }))}
+                    />
+                  </div>
+                )}
+                {orgaoAtivo === 'PCPR' && (
+                  <div className="animate-in fade-in duration-300">
+                    <PcprPanel
+                      cnaes={data.cnaes || []}
+                      answers={pcprAnswers}
+                      onAnswer={(id, value) => setPcprAnswers(prev => ({ ...prev, [id]: value }))}
+                    />
                   </div>
                 )}
               </div>

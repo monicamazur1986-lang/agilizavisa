@@ -12,8 +12,8 @@ const archivo = Archivo({ subsets: ['latin'], weight: ['600', '700', '800'], var
 const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-mono' });
 
 export const metadata: Metadata = {
-  title: 'Agiliza – Quais licenças o seu estabelecimento precisa no Paraná',
-  description: 'Informe o CNPJ e veja em segundos quais licenças o seu negócio precisa para funcionar no Paraná: Vigilância Sanitária, Corpo de Bombeiros e, em breve, o alvará de localização.',
+  title: 'Agiliza — Portal de licenciamento de empresas no Paraná',
+  description: 'Agiliza é o portal de informações sobre licenciamento de empresas no Paraná. Informe o CNPJ ou o CNAE e veja em segundos o que a Vigilância Sanitária, o Corpo de Bombeiros, o Alvará de Funcionamento, o licenciamento Ambiental e a Polícia Civil exigem do seu negócio.',
 };
 
 export default function RootLayout({

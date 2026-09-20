@@ -1,0 +1,134 @@
+{
+  "natureza": "INDICATIVA",
+  "aviso": "Diferentemente das demais frentes do portal, esta base NÃO é a transcrição de um anexo legal indexado por CNAE. A norma ambiental do Paraná não classifica atividades por código CNAE: ela classifica por tipologia descrita em texto e por porte medido em unidades físicas, conjugados com o potencial poluidor e a sensibilidade da localização. A correspondência entre o CNAE e a tipologia ambiental registrada aqui é de autoria do portal, feita a partir das tipologias publicadas pelos órgãos, e serve para ALERTAR que a atividade costuma exigir licenciamento ambiental — nunca para afirmar enquadramento, grau de risco ou dispensa.",
+  "atualizadoEm": "2026-09",
+  "marcoLegal": [
+    "Lei Estadual nº 22.252, de 12 de dezembro de 2024",
+    "Decreto Estadual nº 9.541, de 10 de abril de 2025",
+    "Resolução CEMA nº 110/2021 (atividades de impacto ambiental local)",
+    "Normas específicas por tipologia publicadas pelo Instituto Água e Terra"
+  ],
+  "criterios": {
+    "descricao": "O enquadramento resulta da conjugação de três critérios, e não de uma tabela por atividade.",
+    "potencialPoluidor": ["insignificante", "baixo", "médio", "alto"],
+    "porte": ["micro", "pequeno", "médio", "grande", "excepcional"],
+    "localizacao": "Sensibilidade ambiental do local — área de preservação permanente, reserva legal, manancial, unidade de conservação e área cárstica agravam ou afastam o rito simplificado."
+  },
+  "atos": [
+    { "sigla": "DILA", "nome": "Declaração de Inexigibilidade de Licença Ambiental" },
+    { "sigla": "DLAM", "nome": "Declaração de Dispensa de Licenciamento Ambiental" },
+    { "sigla": "LAC", "nome": "Licença Ambiental por Adesão e Compromisso" },
+    { "sigla": "LAS", "nome": "Licença Ambiental Simplificada" },
+    { "sigla": "LP / LI / LO", "nome": "Licença Prévia, de Instalação e de Operação (rito trifásico)" }
+  ],
+  "atividades": [
+    {
+      "tipologia": "Lavador de veículos",
+      "origem": "Resolução CEMA nº 110/2021, item 6.1",
+      "motivo": "Efluente com óleo, graxa e detergente, e resíduo de caixa separadora.",
+      "cnaes": ["4520005"]
+    },
+    {
+      "tipologia": "Oficina mecânica e manutenção e reparo de veículo automotor",
+      "origem": "Resolução CEMA nº 110/2021, item 6.4",
+      "motivo": "Óleo lubrificante usado, filtros, baterias e estopas contaminadas — resíduos classificados como perigosos.",
+      "cnaes": ["4520001", "4520002", "4520006"]
+    },
+    {
+      "tipologia": "Controle fitossanitário e de vetores e pragas urbanas",
+      "origem": "Resolução CEMA nº 110/2021, item 6.2",
+      "motivo": "Armazenamento e aplicação de produtos químicos e destinação de embalagens.",
+      "cnaes": ["8122200"]
+    },
+    {
+      "tipologia": "Supermercado",
+      "origem": "Resolução CEMA nº 110/2021, item 6.5 (até 10.000 m² de área construída ou impermeabilizada)",
+      "motivo": "Área impermeabilizada, geração de resíduos orgânicos e sistemas de refrigeração.",
+      "cnaes": ["4711301", "4711302", "4712100"]
+    },
+    {
+      "tipologia": "Meios de hospedagem",
+      "origem": "Resolução CEMA nº 110/2021, item 6.7 (área urbana consolidada; em área rural, até 30 leitos)",
+      "motivo": "Geração de efluente sanitário em volume relevante e, em área rural, ausência de rede coletora.",
+      "cnaes": ["5510801", "5510802", "5510803", "5590601", "5590602", "5590603"]
+    },
+    {
+      "tipologia": "Comércio varejista de gás liquefeito de petróleo (GLP)",
+      "origem": "Resolução CEMA nº 110/2021, item 6.9",
+      "motivo": "Armazenamento de produto inflamável, com risco de vazamento e incêndio.",
+      "cnaes": ["4784900"]
+    },
+    {
+      "tipologia": "Lavanderia",
+      "origem": "Resolução CEMA nº 110/2021, item 6.10 (todas, exceto lavanderia industrial)",
+      "motivo": "Efluente com tensoativos e solventes; lavanderia industrial tem rito próprio.",
+      "cnaes": ["9601701", "9601702", "9601703"]
+    },
+    {
+      "tipologia": "Posto de combustível e tanques aéreos de combustível",
+      "origem": "Tipologia própria do IAT (Resolução CONAMA nº 273/2000); Resolução CEMA nº 110/2021, item 6.11 (tanques até 15.000 litros)",
+      "motivo": "Risco de contaminação de solo e água subterrânea por vazamento — licenciamento obrigatório em qualquer porte.",
+      "cnaes": ["4731800", "4732600"]
+    },
+    {
+      "tipologia": "Atividades geradoras de ruído noturno (bares, casas noturnas e similares)",
+      "origem": "Resolução CEMA nº 110/2021, item 6.12",
+      "motivo": "Emissão sonora em período noturno, sujeita a limites e a controle municipal.",
+      "cnaes": ["5611204", "5611205"]
+    },
+    {
+      "tipologia": "Panificadora, açougue e restaurante",
+      "origem": "Resolução CEMA nº 110/2021, item 6.13",
+      "motivo": "Emissão de fumaça e odor, gordura em efluente e resíduo orgânico.",
+      "cnaes": ["1091102", "4721102", "4722901", "5611201", "5611203"]
+    },
+    {
+      "tipologia": "Comércio varejista de material de construção",
+      "origem": "Resolução CEMA nº 110/2021, item 6.14",
+      "motivo": "Armazenamento de material particulado e de produtos químicos da construção civil.",
+      "cnaes": ["4744005", "4744099"]
+    },
+    {
+      "tipologia": "Atividades funerárias e serviços relacionados",
+      "origem": "Resolução CEMA nº 110/2021, item 6.16 (exceto crematórios e cemitérios)",
+      "motivo": "Efluente e resíduo de tanatopraxia; crematórios e cemitérios têm rito próprio e mais exigente.",
+      "cnaes": ["9603304"]
+    },
+    {
+      "tipologia": "Atendimento hospitalar",
+      "origem": "Resolução CEMA nº 110/2021, item 7.1 (até 80 leitos)",
+      "motivo": "Resíduo de serviço de saúde, com plano de gerenciamento obrigatório.",
+      "cnaes": ["8610101"]
+    },
+    {
+      "tipologia": "Serviços veterinários",
+      "origem": "Resolução CEMA nº 110/2021, grupo 7 (serviços médico, hospitalar, laboratorial e veterinário)",
+      "motivo": "Resíduo de serviço de saúde animal e, quando há internamento, efluente específico.",
+      "cnaes": ["7500100"]
+    },
+    {
+      "tipologia": "Transportadora de cargas",
+      "origem": "Tipologia própria do IAT (Resolução CEMA nº 107/2020) — até 5 caminhões admite licenciamento simplificado",
+      "motivo": "Pátio de veículos, abastecimento e manutenção na própria sede.",
+      "cnaes": ["4930201", "4930202"]
+    },
+    {
+      "tipologia": "Aparelhamento de mármore, granito e outras pedras",
+      "origem": "Tipologia industrial do IAT",
+      "motivo": "Efluente com finos de rocha e emissão de material particulado.",
+      "cnaes": ["2391503"]
+    },
+    {
+      "tipologia": "Serralheria e artefatos de metal",
+      "origem": "Tipologia industrial do IAT (Resolução CEMA nº 072/2009 e normas sucessoras)",
+      "motivo": "Emissão de fumos metálicos de solda e resíduo de tratamento de superfície.",
+      "cnaes": ["2542000"]
+    },
+    {
+      "tipologia": "Artefatos de concreto, cimento e fibrocimento",
+      "origem": "Tipologia industrial do IAT",
+      "motivo": "Material particulado, efluente de lavagem de fôrmas e consumo de água.",
+      "cnaes": ["2330399"]
+    }
+  ]
+}
