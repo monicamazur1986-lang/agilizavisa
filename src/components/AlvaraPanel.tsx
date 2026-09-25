@@ -2,8 +2,8 @@
 
 /**
  * @fileOverview PAINEL DO ALVARÁ DE FUNCIONAMENTO — PARANÁ.
- * Decreto Estadual nº 11.063/2025, que atualiza o Anexo Único do Decreto
- * Estadual nº 3.434/2023.
+ * Decreto Estadual nº 3.434/2023, com o Anexo Único atualizado pelos
+ * Decretos Estaduais nº 10.590/2025 e nº 11.063/2025.
  *
  * Diferente do Bombeiros — questionário pequeno e global —, aqui cada CNAE
  * carrega sua própria lista de condições, então o corpo do painel é uma lista
@@ -155,8 +155,9 @@ export function AlvaraPanel({
 
                     {!item.enquadrado && (
                       <p className="px-5 py-4 text-[13px] text-muted-foreground leading-relaxed">
-                        Atividade não consta do Anexo Único. Siga o processo padrão de alvará junto ao órgão
-                        competente do seu município.
+                        Exige alvará — consulte sua prefeitura. Este CNAE não consta do Anexo Único de Baixo
+                        Risco (Decreto Estadual nº 3.434/2023, atualizado pelos Decretos nº 10.590/2025 e
+                        nº 11.063/2025), então segue o rito padrão de alvará na prefeitura do seu município.
                       </p>
                     )}
 

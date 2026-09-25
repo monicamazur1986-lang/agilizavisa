@@ -237,7 +237,7 @@ const LICENCAS = [
     accentTint: 'bg-risk-condicionado/10',
     accentRing: 'border-risk-condicionado',
     status: null as string | null,
-    base: 'Decreto Estadual nº 11.063/2025, que atualiza o Anexo Único do Decreto Estadual nº 3.434/2023',
+    base: 'Decreto Estadual nº 3.434/2023, com o Anexo Único atualizado pelos Decretos Estaduais nº 10.590/2025 e nº 11.063/2025',
     comoFuncionaTitulo: 'Como funciona o enquadramento simplificado',
     comoFunciona: [
       'O Anexo Único do decreto lista 975 atividades como de baixo risco. Estar nessa lista não dispensa o alvará: libera a emissão simplificada e automática, sem vistoria prévia. O alvará continua sendo solicitado.',
@@ -513,7 +513,7 @@ function ContactSection() {
 const FAQ_ITEMS = [
   {
     q: "O que o portal consulta a partir do CNPJ?",
-    a: "Cinco frentes de licenciamento: a da Vigilância Sanitária, com a classificação de risco de cada CNAE da empresa, o porte de fiscalização e as exigências de projeto; a do Corpo de Bombeiros Militar do Paraná, com o enquadramento nos anexos da Portaria do Comando-Geral nº 476/2025; a do Alvará de Funcionamento, com o enquadramento no Anexo Único do Decreto Estadual nº 11.063/2025, que define quando a emissão pode ser simplificada e automática, sem vistoria prévia; a do Licenciamento Ambiental, que orienta sobre a exigência conforme a tipologia da atividade; e a da Polícia Civil, com o enquadramento no Anexo Único da Lei Estadual nº 20.936/2021."
+    a: "Cinco frentes de licenciamento: a da Vigilância Sanitária, com a classificação de risco de cada CNAE da empresa, o porte de fiscalização e as exigências de projeto; a do Corpo de Bombeiros Militar do Paraná, com o enquadramento nos anexos da Portaria do Comando-Geral nº 476/2025; a do Alvará de Funcionamento, com o enquadramento no Anexo Único do Decreto Estadual nº 3.434/2023 (atualizado pelos Decretos nº 10.590/2025 e nº 11.063/2025), que define quando a emissão pode ser simplificada e automática, sem vistoria prévia; a do Licenciamento Ambiental, que orienta sobre a exigência conforme a tipologia da atividade; e a da Polícia Civil, com o enquadramento no Anexo Único da Lei Estadual nº 20.936/2021."
   },
   {
     q: "A dispensa da Vigilância Sanitária vale para o Corpo de Bombeiros?",
@@ -521,7 +521,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Como funciona a consulta ao Alvará de Funcionamento?",
-    a: "A classificação vem de um decreto estadual — o Decreto nº 11.063/2025, que atualiza o Anexo Único do Decreto nº 3.434/2023 —, mas o alvará em si é sempre emitido pela prefeitura do município onde a empresa está estabelecida. Estar no Anexo Único e atender cumulativamente às condições listadas para a atividade libera a emissão sem vistoria prévia, por via simplificada e automática; fora do Anexo, ou com alguma condição não atendida, o alvará segue o processo padrão do município."
+    a: "A classificação vem de decreto estadual — o Anexo Único do Decreto nº 3.434/2023, atualizado pelos Decretos nº 10.590/2025 e nº 11.063/2025 —, mas o alvará em si é sempre emitido pela prefeitura do município onde a empresa está estabelecida. Estar no Anexo Único e atender cumulativamente às condições listadas para a atividade libera a emissão sem vistoria prévia, por via simplificada e automática; fora do Anexo, ou com alguma condição não atendida, o alvará segue o processo padrão do município."
   },
   {
     q: "O que significa cada nível de risco (Baixo, Médio, Alto e Condicionado)?",

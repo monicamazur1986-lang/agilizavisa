@@ -2,8 +2,13 @@
 
 /**
  * @fileOverview MOTOR DE ANÁLISE DO ALVARÁ DE FUNCIONAMENTO — PARANÁ.
- * DECRETO ESTADUAL Nº 11.063/2025, que atualiza o Anexo Único do Decreto
- * Estadual nº 3.434/2023.
+ * DECRETO ESTADUAL Nº 3.434/2023, com o Anexo Único (Baixo Risco) atualizado
+ * pelo DECRETO ESTADUAL Nº 10.590/2025 (ampliou de 771 para 975 CNAEs) e, em
+ * seguida, pelo DECRETO ESTADUAL Nº 11.063/2025 (adiou a vigência de 10.590
+ * para 1º de outubro de 2025 e, pelo art. 2º, substituiu integralmente o
+ * Anexo Único do Decreto 3.434/2023 por um novo texto). Os dados abaixo
+ * refletem o Anexo Único na redação dada pelo Decreto 11.063/2025 — versão
+ * mais recente, já conferida contra o texto oficial.
  *
  * A classificação vem de decreto ESTADUAL, mas o alvará em si é emitido pelo
  * MUNICÍPIO — o decreto só define quando a emissão pode ser simplificada e
@@ -49,7 +54,7 @@ function normalizeCnae(code: string): string {
 }
 
 const FUNDAMENTO_BASE =
-  'Decreto Estadual nº 11.063/2025 (Paraná), que atualiza o Anexo Único do Decreto Estadual nº 3.434/2023';
+  'Decreto Estadual nº 3.434/2023 (Paraná), com o Anexo Único atualizado pelos Decretos Estaduais nº 10.590/2025 e nº 11.063/2025';
 
 /**
  * Chave de resposta de uma condição. Cada CNAE tem sua própria lista de
@@ -118,7 +123,7 @@ export function analyzeAlvara(cnaes: Cnae[], answers: Record<string, string>): A
       level: 'NÃO ENCONTRADO',
       headline: 'Nenhuma atividade econômica identificada',
       procedure:
-        'Sem CNAE informado não é possível localizar a atividade no Anexo Único do Decreto Estadual nº 11.063/2025. Consulte a prefeitura do município onde a empresa está estabelecida.',
+        'Sem CNAE informado não é possível localizar a atividade no Anexo Único do Decreto Estadual nº 3.434/2023 (atualizado pelos Decretos nº 10.590/2025 e nº 11.063/2025). Consulte a prefeitura do município onde a empresa está estabelecida.',
       reasons: [],
       triagem,
       legalBasis: [FUNDAMENTO_BASE],
@@ -145,27 +150,27 @@ export function analyzeAlvara(cnaes: Cnae[], answers: Record<string, string>): A
   for (const item of triagem) {
     if (!item.enquadrado) {
       reasons.push(
-        `${item.code} — ${item.description}: a atividade não consta do Anexo Único, o que afasta a emissão simplificada para o CNPJ.`
+        `${item.code} — ${item.description}: CNAE fora do Anexo Único de Baixo Risco (${FUNDAMENTO_BASE}) — segue o rito padrão de alvará na prefeitura.`
       );
       continue;
     }
     if (item.pendente) {
       const faltantes = item.condicoes.filter((c) => c.atendida === null).length;
       reasons.push(
-        `${item.code} — ${item.description}: ainda ${faltantes === 1 ? 'falta 1 condição' : `faltam ${faltantes} condições`} a confirmar no Anexo Único.`
+        `${item.code} — ${item.description}: consta do Anexo Único, mas ainda ${faltantes === 1 ? 'falta 1 condição' : `faltam ${faltantes} condições`} a confirmar antes de saber se segue pelo rito simplificado.`
       );
       continue;
     }
     reasons.push(
-      `${item.code} — ${item.description}: não atende a uma ou mais condições exigidas pelo Anexo Único, o que afasta a emissão simplificada para esta atividade.`
+      `${item.code} — ${item.description}: consta do Anexo Único, mas não atende a uma ou mais condições exigidas (${FUNDAMENTO_BASE}) — por isso segue o rito padrão de alvará na prefeitura.`
     );
   }
 
   return {
     level: 'PADRAO',
-    headline: 'Alvará sujeito a vistoria prévia',
+    headline: 'Exige alvará — consulte sua prefeitura',
     procedure:
-      'Ao menos uma atividade do CNPJ não consta do Anexo Único, ou não atende (ainda) a alguma condição exigida: o pedido segue o trâmite normal da prefeitura, que pode incluir vistoria do local antes da emissão. O alvará é obrigatório nos dois casos — muda apenas o rito.',
+      'O alvará de funcionamento é exigido: ao menos um CNAE do CNPJ não está no Anexo Único de Baixo Risco, ou não atende (ainda) a alguma condição exigida dele. Nesses casos o pedido segue o trâmite padrão da prefeitura do município onde a empresa está estabelecida, que pode incluir vistoria prévia do local.',
     reasons,
     triagem,
     legalBasis: [FUNDAMENTO_BASE],

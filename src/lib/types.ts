@@ -96,8 +96,8 @@ export interface BombeirosResult {
 
 /* ------------------------------------------------------------------ *
  * ALVARÁ DE FUNCIONAMENTO — PARANÁ
- * Decreto Estadual nº 11.063/2025, que atualiza o Anexo Único do Decreto
- * Estadual nº 3.434/2023.
+ * Decreto Estadual nº 3.434/2023, com o Anexo Único atualizado pelos
+ * Decretos Estaduais nº 10.590/2025 e nº 11.063/2025.
  *
  * Diferença estrutural em relação ao Bombeiros: aqui não há um questionário
  * global pequeno. Cada CNAE do Anexo Único carrega sua PRÓPRIA lista de
