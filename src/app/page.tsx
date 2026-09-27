@@ -30,6 +30,7 @@ import { AmbientalPanel } from '@/components/AmbientalPanel';
 import { PcprPanel } from '@/components/PcprPanel';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { trackEvent } from '@/lib/analytics';
 import type { CompanyData, RiskAnalysisResult } from '@/lib/types';
 
 const schema = z.object({
@@ -712,6 +713,7 @@ export default function Home() {
         const res = await fetchCnpjData(values.cnpj);
         if (res && res.success) {
           setData(res.data);
+          trackEvent('consulta_realizada', { metodo: 'cnpj' });
           if (db) {
             addDoc(collection(db, 'queries'), {
               cnpj: cleanedCnpj,

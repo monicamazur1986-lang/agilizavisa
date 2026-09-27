@@ -3,6 +3,7 @@ import { Manrope, Archivo, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { AnalyticsInit } from '@/components/AnalyticsInit';
 
 // Corpo: continuidade com a identidade atual do portal.
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans' });
@@ -27,6 +28,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body className={`${manrope.variable} ${archivo.variable} ${plexMono.variable} font-sans`}>
+        <AnalyticsInit />
         <FirebaseClientProvider>
           {children}
           <Toaster />
